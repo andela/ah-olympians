@@ -68,4 +68,4 @@ class UserTest(APITestCase):
         """Test method to get full user name"""
         self.assertEqual(self.user_2.get_full_name, "musa")
         
-
+        

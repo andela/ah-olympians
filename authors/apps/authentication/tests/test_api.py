@@ -73,7 +73,7 @@ class UserTest(APITestCase):
 
     def test_login_user(self):
         """
-        test register
+        test login
         """
         self.user['user']['email'] = "james@gmail.com"
         self.user['user']['password'] = "4567890123"
@@ -86,7 +86,7 @@ class UserTest(APITestCase):
 
     def test_login_unregistered_user(self):
         """
-        test register
+        test login
         """
         #create user
         self.client.post('/api/users/', self.user, format='json')
@@ -112,7 +112,7 @@ class UserTest(APITestCase):
 
     def test_retrieve_user_unauthenticated(self):
         """
-        test register
+        test retrieve user
         """
         #create user
         self.client.post('/api/users/', self.user, format='json')
@@ -125,7 +125,7 @@ class UserTest(APITestCase):
 
     def test_update_user_unauthenticated(self):
         """
-        test register
+        test update user
         """
         self.user['user']['password'] = "4567890123"
         #create user
