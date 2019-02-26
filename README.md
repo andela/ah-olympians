@@ -1,6 +1,6 @@
 Authors Haven - A Social platform for the creative at heart.
 =======
-
+[![Coverage Status](https://coveralls.io/repos/github/andela/ah-olympians/badge.svg?branch=master)](https://coveralls.io/github/andela/ah-olympians?branch=master)
 ## Vision
 Create a community of like minded authors to foster inspiration and innovation
 by leveraging the modern web.
