@@ -120,8 +120,8 @@ class UserTest(APITestCase):
         response = self.client.get('/api/user/')
         result = json.loads(response.content)
 
-        self.assertIn('detail', str(result))
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('Authentication credentials were not provided.', str(result))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_update_user_unauthenticated(self):
         """
@@ -134,5 +134,5 @@ class UserTest(APITestCase):
         response = self.client.put('/api/user/', self.user, format='json')
         result = json.loads(response.content)
 
-        self.assertIn('detail', str(result))
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('Authentication credentials were not provided.', str(result))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
