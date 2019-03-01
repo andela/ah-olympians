@@ -7,7 +7,7 @@ from .models import User
 
 from social_django.utils import load_strategy, load_backend
 from social_core.exceptions import MissingBackend
-from social_core.backends.oauth import BaseOAuth2
+from social_core.backends.oauth import BaseOAuth2,BaseOAuth1
 
 from .renderers import UserJSONRenderer
 from .serializers import (
@@ -107,10 +107,15 @@ class SocialAuthentication(CreateAPIView):
                 }
                 },status=status.HTTP_404_NOT_FOUND)
         
-        if isinstance(backend,BaseOAuth2):
+        if isinstance(backend,BaseOAuth1):
+            token = {
+                "oauth_token":serializer.data.get('access_token'),
+                "oauth_token_secret":serializer.data.get('access_token_secret')
+            }
+            print(token)
+        elif isinstance(backend,BaseOAuth2):
             #Fetch the access token
             token = serializer.data['access_token']
-
         try:
             #check if there is an authenticated user,if true create a new one
             user = backend.do_auth(token,user=authenticated_user)
@@ -123,7 +128,6 @@ class SocialAuthentication(CreateAPIView):
         
         if user and user.is_active:
             serializer = UserSerializer(user)
-            print(user)
             # authenticated_user_created = user.social.auth.get(provider=provider)
             # if not authenticated_user_created.extra_data['access_token']:
             #     authenticated_user_created.extra_data['access_token'] = token

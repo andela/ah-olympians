@@ -158,14 +158,18 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '65389949271-ppl7dcmr3qbt569a3387vgfgugj7f0a5.apps.googleusercontent.com'
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = 'GOgnvguu7FDUACvs__XiAYQ_'
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ['SOCIAL_AUTH_GOOGLE_OAUTH2_KEY']
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ['SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET']
 #Scope
 SOCIAL_AUTH_GOOGLE_OAUTH_SCOPE = ['email', 'username']
 
-SOCIAL_AUTH_FACEBOOK_KEY = '388837494997867'
+SOCIAL_AUTH_TWITTER_KEY = os.environ['SOCIAL_AUTH_TWITTER_KEY']
+SOCIAL_AUTH_TWITTER_SECRET = os.environ['SOCIAL_AUTH_TWITTER_SECRET']
+SOCIAL_AUTH_TWITTER_SCOPE = ['email']
+
+SOCIAL_AUTH_FACEBOOK_KEY = os.environ['SOCIAL_AUTH_FACEBOOK_KEY']
 SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
-SOCIAL_AUTH_FACEBOOK_SECRET = '9580a3e99e1f94e122450bc3500441e7'
+SOCIAL_AUTH_FACEBOOK_SECRET = os.environ['SOCIAL_AUTH_FACEBOOK_SECRET']
 SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {
     'fields': 'id, name, email'
 }
@@ -191,6 +195,8 @@ AUTHENTICATION_BACKENDS = (
     # Facebook OAuth2
     'social_core.backends.facebook.FacebookAppOAuth2',
     'social_core.backends.facebook.FacebookOAuth2',
+
+    'social_core.backends.twitter.TwitterOAuth',
     # Django
     'django.contrib.auth.backends.ModelBackend',
 )
