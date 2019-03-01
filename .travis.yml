@@ -1,0 +1,25 @@
+language: python
+
+python:
+  - "3.6.7"
+  
+# install dependencies
+install:
+  - pip install -r requirements.txt
+  - pip install coveralls
+
+
+before_script:
+  - psql -c 'create database olympians;' -U postgres
+
+# run tests
+
+script: 
+  - python manage.py makemigrations
+  - python manage.py migrate
+  - coverage run --source=authors.apps manage.py test
+  - coverage report
+    
+after_success:
+  - coverallslanguage: python
+  - coveralls
