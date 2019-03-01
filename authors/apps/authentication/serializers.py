@@ -143,3 +143,7 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+class SocialSerializer(serializers.Serializer):
+    access_token = serializers.CharField(max_length=270,required=True)
+    access_token_secret = serializers.CharField(max_length=300,allow_blank=True)
+    provider = serializers.CharField(max_length=270,required=True)
