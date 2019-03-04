@@ -158,10 +158,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
-<<<<<<< HEAD
 
-=======
->>>>>>> c3b2fff... feature(add social authentication): add social authentication to the application
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ['SOCIAL_AUTH_GOOGLE_OAUTH2_KEY']
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ['SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET']
 #Scope
@@ -174,16 +171,9 @@ SOCIAL_AUTH_TWITTER_SCOPE = ['email']
 SOCIAL_AUTH_FACEBOOK_KEY = os.environ['SOCIAL_AUTH_FACEBOOK_KEY']
 SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
 SOCIAL_AUTH_FACEBOOK_SECRET = os.environ['SOCIAL_AUTH_FACEBOOK_SECRET']
-<<<<<<< HEAD
 
 
 
-=======
-SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {
-    'fields': 'id, name, email'
-}
-FACEBOOK_EXTENDED_PERMISSIONS = ['email']
->>>>>>> c3b2fff... feature(add social authentication): add social authentication to the application
 
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
@@ -205,16 +195,8 @@ AUTHENTICATION_BACKENDS = (
     # Facebook OAuth2
     'social_core.backends.facebook.FacebookAppOAuth2',
     'social_core.backends.facebook.FacebookOAuth2',
-<<<<<<< HEAD
-<<<<<<< HEAD
 
     'social_core.backends.twitter.TwitterOAuth',
-=======
->>>>>>> ff0852b... feature(social-login) Enable login using social sites
-=======
-
-    'social_core.backends.twitter.TwitterOAuth',
->>>>>>> c3b2fff... feature(add social authentication): add social authentication to the application
     # Django
     'django.contrib.auth.backends.ModelBackend',
 )

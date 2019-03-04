@@ -1,8 +1,11 @@
 import json
 <<<<<<< HEAD
+<<<<<<< HEAD
 import os
 =======
 >>>>>>> c3b2fff... feature(add social authentication): add social authentication to the application
+=======
+>>>>>>> c3b2fff0a6a11a5b5cb002f4731899bf01d519f0
 
 from django.urls import reverse
 
@@ -11,11 +14,16 @@ from rest_framework.test import APITestCase
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 access_token = "EAAFhpUjDw2sBADzjtoq6C0KhOdsFyB2b9lkj7pJqNqPrOTgMSAPfHUh9ZBbhi2naHxItdnIasTcYOzSvNkWZCLDKmEvTrZBgCyOZA1sx25bwyHc8LpfkfahiI70NgHQEuwXmjZBu96ZBaQrUL5PrUZBDMSgeWciGPzwGC6IZAVqnh3IvVV8ZA7VkYEoCF6Fo1cBt2kLTS7qonMAHKOxErcLbo"
 access_token_secret=""
 >>>>>>> c3b2fff... feature(add social authentication): add social authentication to the application
+=======
+access_token = "EAAFhpUjDw2sBADzjtoq6C0KhOdsFyB2b9lkj7pJqNqPrOTgMSAPfHUh9ZBbhi2naHxItdnIasTcYOzSvNkWZCLDKmEvTrZBgCyOZA1sx25bwyHc8LpfkfahiI70NgHQEuwXmjZBu96ZBaQrUL5PrUZBDMSgeWciGPzwGC6IZAVqnh3IvVV8ZA7VkYEoCF6Fo1cBt2kLTS7qonMAHKOxErcLbo"
+access_token_secret=""
+>>>>>>> c3b2fff0a6a11a5b5cb002f4731899bf01d519f0
 
 class SocialLoginTest(APITestCase):
     """ 
@@ -70,6 +78,7 @@ class SocialLoginTest(APITestCase):
         )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     
@@ -114,3 +123,6 @@ class SocialLoginTest(APITestCase):
 =======
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 >>>>>>> c3b2fff... feature(add social authentication): add social authentication to the application
+=======
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+>>>>>>> c3b2fff0a6a11a5b5cb002f4731899bf01d519f0
