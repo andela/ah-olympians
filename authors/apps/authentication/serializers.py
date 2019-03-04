@@ -5,7 +5,7 @@ from rest_framework.validators import UniqueValidator
 
 from rest_framework import serializers
 
-from .models import User
+from .models import User, EmailVerification
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -177,3 +177,13 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+class EmailVerificationSerializer(serializers.ModelSerializer):
+    """
+    This the email verification Serializer
+    """
+    class Meta:
+        model = EmailVerification
+        fields = ('token',)
+        extra_kwargs = {"token": {"error_messages": {"required": "Please provide a token"}}}
