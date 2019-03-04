@@ -104,5 +104,4 @@ class SocialLoginTest(APITestCase):
             token,
             format='json'
         )
-
         self.assertEqual(repsonse.status_code,status.HTTP_201_CREATED)
