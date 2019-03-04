@@ -1,29 +1,18 @@
 import json
-<<<<<<< HEAD
-<<<<<<< HEAD
 import os
-=======
->>>>>>> c3b2fff... feature(add social authentication): add social authentication to the application
-=======
->>>>>>> c3b2fff0a6a11a5b5cb002f4731899bf01d519f0
 
 from django.urls import reverse
 
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+access_token = os.environ['FB_ACCESS_TOKEN']
+twitter_access_token_secret = os.environ['TWITTER_ACCESS_TOKEN_SECRET']
+twitter_access_token = os.environ['TWITTER_ACCESS_TOKEN']
+google_token = os.environ['GOOGLE_ACCESS_TOKEN']
+access_token_secret = ''
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
-access_token = "EAAFhpUjDw2sBADzjtoq6C0KhOdsFyB2b9lkj7pJqNqPrOTgMSAPfHUh9ZBbhi2naHxItdnIasTcYOzSvNkWZCLDKmEvTrZBgCyOZA1sx25bwyHc8LpfkfahiI70NgHQEuwXmjZBu96ZBaQrUL5PrUZBDMSgeWciGPzwGC6IZAVqnh3IvVV8ZA7VkYEoCF6Fo1cBt2kLTS7qonMAHKOxErcLbo"
-access_token_secret=""
->>>>>>> c3b2fff... feature(add social authentication): add social authentication to the application
-=======
-access_token = "EAAFhpUjDw2sBADzjtoq6C0KhOdsFyB2b9lkj7pJqNqPrOTgMSAPfHUh9ZBbhi2naHxItdnIasTcYOzSvNkWZCLDKmEvTrZBgCyOZA1sx25bwyHc8LpfkfahiI70NgHQEuwXmjZBu96ZBaQrUL5PrUZBDMSgeWciGPzwGC6IZAVqnh3IvVV8ZA7VkYEoCF6Fo1cBt2kLTS7qonMAHKOxErcLbo"
-access_token_secret=""
->>>>>>> c3b2fff0a6a11a5b5cb002f4731899bf01d519f0
 
 class SocialLoginTest(APITestCase):
     """ 
@@ -76,9 +65,7 @@ class SocialLoginTest(APITestCase):
             token,
             format='json'
         )
-
-<<<<<<< HEAD
-<<<<<<< HEAD
+        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     
@@ -117,12 +104,5 @@ class SocialLoginTest(APITestCase):
             token,
             format='json'
         )
-        print(repsonse.data)
 
         self.assertEqual(repsonse.status_code,status.HTTP_201_CREATED)
-=======
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
->>>>>>> c3b2fff... feature(add social authentication): add social authentication to the application
-=======
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
->>>>>>> c3b2fff0a6a11a5b5cb002f4731899bf01d519f0
