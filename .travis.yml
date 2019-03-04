@@ -9,11 +9,17 @@ install:
   - pip install coveralls
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 addons:
   postgresql: "9.4"
 
 =======
 >>>>>>> 29613bf... chore(integrate TravisCI): Intergrate TravisCI to project repo on github
+=======
+addons:
+  postgresql: "9.4"
+
+>>>>>>> 0cd1628... feature(social-authentication): add social authentication with Facebook,Google and Twitter
 
 before_script:
   - psql -c 'create database olympians;' -U postgres

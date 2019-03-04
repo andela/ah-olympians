@@ -157,7 +157,10 @@ REST_FRAMEWORK = {
     ),
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 0cd1628... feature(social-authentication): add social authentication with Facebook,Google and Twitter
 AUTHENTICATION_BACKENDS = [
     'rest_framework_social_oauth2.backends.DjangoOAuth2',
    'django.contrib.auth.backends.ModelBackend',
@@ -206,7 +209,10 @@ AUTHENTICATION_BACKENDS = (
     # Django
     'django.contrib.auth.backends.ModelBackend',
 )
+<<<<<<< HEAD
 >>>>>>> feature(social-authentication): add social authentication with Facebook,Google and Twitter
+=======
+>>>>>>> 0cd1628... feature(social-authentication): add social authentication with Facebook,Google and Twitter
 
 # activate django_heroku
 django_heroku.settings(locals())
