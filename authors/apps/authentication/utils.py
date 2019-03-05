@@ -6,7 +6,6 @@ from sendgrid.helpers.mail import *
 def send_email(to_email, subject, message):
     """This function is used to send email.
     Takes in email_to, subject, message as parameters
-
     :param to_email: person to be sent email
     :param subject: subject of the email
     :param message: message of the email

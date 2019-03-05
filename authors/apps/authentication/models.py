@@ -98,7 +98,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         """
         Returns a string representation of this `User`.
-
         This string is used when a `User` is printed in the console.
         """
         return self.email
@@ -107,7 +106,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         """
         Allows us to get a user's token by calling `user.token` instead of
         `user.generate_jwt_token().
-
         The `@property` decorator above makes this possible. `token` is called
         a "dynamic property".
         """
@@ -230,7 +228,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 class EmailVerification(models.Model):
     """
     This class creates a Password Reset Token.
-
     """
     user = models.ForeignKey(
         User,
