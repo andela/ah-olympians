@@ -12,17 +12,24 @@ class ProfileJSONRenderer(JSONRenderer):
         # the default JSONRenderer to handle rendering errors, so we need to
         # check for this case.
         errors = data.get('errors', None)
+        token = data.get('token', None)
 
         if errors is not None:
             # As mentioned about, we will let the default JSONRenderer handle
             # rendering errors.
             return super(ProfileJSONRenderer, self).render(data)
 
+        if token is not None and isinstance(token, bytes):
+            # We will decode `token` if it is of type
+            # bytes.
+            data['token'] = token.decode('utf-8')
+
+        # Append Cloudinary URL prefix to stored avatar link
+        if data.get("avatar"):
+            avatar_prefix = "https://res.cloudinary.com/jumakahiga/"
+            data["avatar"] = avatar_prefix + data["avatar"]
 
         # Finally, we can render our data under the "user" namespace.
-        avatar_suffix = data["avatar"]
-        avatar_prefix = "https://res.cloudinary.com/jumakahiga/"
-        data["avatar"] = avatar_prefix + avatar_suffix
         return json.dumps({
             'profile': data
         })
