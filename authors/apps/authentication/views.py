@@ -3,20 +3,21 @@ from rest_framework.generics import RetrieveUpdateAPIView,CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from .models import User
-
 from social_django.utils import load_strategy, load_backend
 from social_core.exceptions import MissingBackend
 from social_core.backends.oauth import BaseOAuth2,BaseOAuth1
 from .utils import send_email, verify_message
 from .models import EmailVerification
 from .renderers import UserJSONRenderer
+from .models import User, EmailVerification
+from .backends import JWTAuthentication
+from .renderers import UserJSONRenderer
 from .serializers import (
-
-    LoginSerializer, RegistrationSerializer, UserSerializer, EmailVerificationSerializer,SocialSerializer
-
+    LoginSerializer, RegistrationSerializer, UserSerializer,
+    PasswordResetRequestSerializer, SetNewPasswordSerializer,
+    EmailVerificationSerializer,SocialSerializer
 )
+from .utils import send_email, verify_message
 
 
 class RegistrationAPIView(APIView):
@@ -163,7 +164,47 @@ class UserEmailVerification(APIView):
                 return Response({"error": "Token already used"}, status=status.HTTP_400_BAD_REQUEST)
             verification.is_valid = False
             verification.save()
-            return Response({"success":"valid token"}, status=status.HTTP_200_OK)
+            return Response({"success": "valid token"}, status=status.HTTP_200_OK)
         except EmailVerification.DoesNotExist:
             return Response({"error": "invalid token"}, status=status.HTTP_403_FORBIDDEN)
 
+class ResetPasswordRequestAPIView(APIView):
+    """This view class provides a view to request a password reset.
+    :return: http Response object
+    """
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        """This method gives a POST API view to request for password reset
+        :param request: http request object
+        :return: http Response
+        """
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        send = User.send_reset_token(serializer, request)
+        return Response({'message': send}, status=status.HTTP_202_ACCEPTED)
+
+
+class SetNewPasswordAPIView(APIView):
+    """
+    This view class provides a view to update and hence reset password
+    :return: http Response
+    """
+    permission_classes = (AllowAny,)
+
+    def put(self, request, reset_token):
+        """This method gives a PUT API view to set new password
+        :param request: http request object
+        :param reset_token: password reset token sent to user
+        :return: http response message
+        """
+        serializer = SetNewPasswordSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            password = request.data['password']
+            user_credentials = JWTAuthentication().authenticate_request_token(
+                token=reset_token)
+
+            message = User.save_new_password(user_credentials, password)
+
+            return Response(
+                {'message': message},
+                status=status.HTTP_202_ACCEPTED)
