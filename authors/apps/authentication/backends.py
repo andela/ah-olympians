@@ -4,7 +4,7 @@ from django.conf import settings
 
 from rest_framework import authentication, exceptions
 
-from .models import User
+from authors.apps.authentication.models import User
 
 """Configure JWT Here"""
 
@@ -50,7 +50,17 @@ class JWTAuthentication(authentication.BaseAuthentication):
 
         return self._authenticate_credentials(token)
 
-    def _authenticate_credentials(self, token):
+    def authenticate_request_token(self, token):
+        """
+        This method takes a token as a parameter and tries to authenticate it.
+        If authentication successful, return user and token: else throw and error
+        :param token:
+        :return: user and token
+        """
+        return self._authenticate_credentials(token)
+
+    @staticmethod
+    def _authenticate_credentials(token):
         """
         Try to authenticate the given credentials. If authentication is
         successful, return the user and token. If not, throw an error.

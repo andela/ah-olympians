@@ -2,7 +2,6 @@ from django.contrib.auth import authenticate, password_validation
 from django.core.validators import RegexValidator
 from rest_framework.validators import UniqueValidator
 
-
 from rest_framework import serializers
 
 from .models import User, EmailVerification
@@ -19,15 +18,13 @@ class RegistrationSerializer(serializers.ModelSerializer):
         max_length=128,
         min_length=8,
         write_only=True,
-        validators = [alphanumeric],
+        validators=[alphanumeric],
         error_messages={
             "min_length": "Please ensure that your password has more than 8 characters",
             "blank": "A password is required to complete registration",
             "required": "A password is required to complete registration"
         }
     )
-
-        
 
     # The client should not be able to send a token along with a registration
     # request. Making `token` read-only handles that for us.
@@ -39,26 +36,25 @@ class RegistrationSerializer(serializers.ModelSerializer):
         fields = ['email', 'username', 'password']
         extra_kwargs = {
             "username": {
-                    "error_messages": {
-                            "required": "A username is required to complete registration",
-                            "blank": "A username is required to complete registration"
-                    },
-                    "validators":
-                                [UniqueValidator(queryset=User.objects.all(), 
-                                    message="Username is already assigned to another user")]
-                    },
-            "email":{
-                    "error_messages": {
-                            "required": "Email must be provided to complete registration",
-                            "blank": "Email must be provided to complete registration",
-                            "invalid": "The provided email is invalid"
-                            },
-                    "validators":
-                                [UniqueValidator(queryset=User.objects.all(),
-                                    message="Email is already registered to another user")]
-                    }
+                "error_messages": {
+                    "required": "A username is required to complete registration",
+                    "blank": "A username is required to complete registration"
+                },
+                "validators":
+                    [UniqueValidator(queryset=User.objects.all(),
+                                     message="Username is already assigned to another user")]
+            },
+            "email": {
+                "error_messages": {
+                    "required": "Email must be provided to complete registration",
+                    "blank": "Email must be provided to complete registration",
+                    "invalid": "The provided email is invalid"
+                },
+                "validators":
+                    [UniqueValidator(queryset=User.objects.all(),
+                                     message="Email is already registered to another user")]
             }
-
+        }
 
     def create(self, validated_data):
         # Use the `create_user` method we wrote earlier to create a new user.
@@ -183,7 +179,31 @@ class EmailVerificationSerializer(serializers.ModelSerializer):
     """
     This the email verification Serializer
     """
+
     class Meta:
         model = EmailVerification
         fields = ('token',)
         extra_kwargs = {"token": {"error_messages": {"required": "Please provide a token"}}}
+
+
+class PasswordResetRequestSerializer(serializers.ModelSerializer):
+    """ Handles serialization and deserialization of user email"""
+    email = serializers.EmailField(required=True)
+
+    class Meta:
+        extra_kwargs = {'email': {'read_only': True}}
+        model = User
+        fields = ('email',)
+
+
+class SetNewPasswordSerializer(serializers.ModelSerializer):
+    """ Handles serialization and deserialization of user password"""
+    password = serializers.CharField(
+        max_length=128,
+        min_length=8,
+        write_only=True
+    )
+
+    class Meta:
+        model = User
+        fields = ('password',)
