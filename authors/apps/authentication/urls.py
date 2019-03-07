@@ -2,6 +2,8 @@ from django.urls import path
 
 from .views import (
     LoginAPIView, RegistrationAPIView, UserRetrieveUpdateAPIView,SocialAuthentication
+    LoginAPIView, RegistrationAPIView, UserRetrieveUpdateAPIView, UserEmailVerification,SocialAuthentication
+
 )
 
 app_name = 'authentication'
@@ -11,4 +13,5 @@ urlpatterns = [
     path('users/', RegistrationAPIView.as_view()),
     path('users/login/', LoginAPIView.as_view()),
     path("convert_token/", SocialAuthentication.as_view(), name='login_social')
+    path('users/verify/', UserEmailVerification.as_view()),
 ]

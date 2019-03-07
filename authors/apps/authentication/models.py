@@ -1,4 +1,5 @@
 import jwt
+import uuid
 
 from datetime import datetime, timedelta
 
@@ -13,7 +14,6 @@ class UserManager(BaseUserManager):
     """
     Django requires that custom users define their own Manager class. By
     inheriting from `BaseUserManager`, we get a lot of the same code used by
-    Django to create a `User` for free. 
     All we have to do is override the `create_user` function which we will use
     to create `User` objects.
     """
@@ -119,7 +119,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.username
 
     def get_short_name(self):
-        pass
+        """
+        This method is required by Django for things like handling emails.
+        Typically, this would be the user's first name. Since we do not store
+        the user's real name, we return their username instead.
+        """
+        return self.username
 
     def _generate_jwt_token(self):
         """
@@ -134,3 +139,36 @@ class User(AbstractBaseUser, PermissionsMixin):
         }, settings.SECRET_KEY, algorithm='HS256')
 
         return token.decode('utf-8')
+
+    def create_token(self):
+        """
+        This
+        :return:
+        """
+        token = str(uuid.uuid4())
+        verification = EmailVerification.objects.create(user=self, token=token)
+        verification.save()
+        return verification.token
+
+
+class EmailVerification(models.Model):
+    """
+    This class creates a Password Reset Token.
+
+    """
+    user = models.ForeignKey(
+        User,
+        related_name='email_verifications',
+        on_delete=models.CASCADE,
+        verbose_name='User associated with this email token'
+    )
+    token = models.CharField(max_length=256)
+    created = models.DateTimeField(
+        auto_now=True,
+        verbose_name='When was this TOKEN created'
+    )
+    is_valid = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ('created',)
+
