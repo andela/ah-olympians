@@ -1,4 +1,5 @@
 
+
 """Test API endpoints"""
 
 import json
@@ -46,7 +47,6 @@ class UserTest(APITestCase):
 
         self.assertIn('Email is already registered to another user', str(result))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
         self.assertIn('user with this email already exists.', str(result))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -62,6 +62,7 @@ class UserTest(APITestCase):
         self.user['user']['password'] = ""
         response = self.client.post('/api/users/', self.user, format='json')
         result = json.loads(response.content)
+
 
         self.assertIn('A username is required to complete registration', str(result))
         self.assertIn('This field may not be blank.', str(result))
@@ -119,6 +120,7 @@ class UserTest(APITestCase):
         """
         test login user without required fields
         """
+
         # create user
         self.client.post('/api/users/', format='json')
         # hit the API endpoint
@@ -137,33 +139,40 @@ class UserTest(APITestCase):
         """
         test retrieve user
         """
-        # create user
+
         #create user
         self.client.post('/api/users/', self.user, format='json')
         # hit the API endpoint
         response = self.client.get('/api/user/')
         result = json.loads(response.content)
 
+
         self.assertIn(
             'Authentication credentials were not provided.', str(result))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertIn('detail', str(result))
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('Authentication credentials were not provided.', str(result))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 
     def test_update_user_unauthenticated(self):
         """
         test update user
         """
         self.user['user']['password'] = "4567890123"
-        # create user
+
         #create user
         self.client.post('/api/users/', self.user, format='json')
         # hit the API endpoint
         response = self.client.put('/api/user/', self.user, format='json')
         result = json.loads(response.content)
 
+
         self.assertIn(
             'Authentication credentials were not provided.', str(result))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertIn('detail', str(result))
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('Authentication credentials were not provided.', str(result))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

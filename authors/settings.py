@@ -88,11 +88,7 @@ WSGI_APPLICATION = 'authors.wsgi.application'
 
 DATABASES = {
     'default': {
-<<<<<<< HEAD
-        'ENGINE': 'django.db.backends.postgresql_psycopg2'
-=======
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
->>>>>>> 29613bf... chore(integrate TravisCI): Intergrate TravisCI to project repo on github
         'USER': os.environ['DB_USER'],
         'PASSWORD': os.environ['DB_PASSWORD'],
         'NAME': os.environ['DB_NAME'],
@@ -152,15 +148,10 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'authors.apps.core.exceptions.core_exception_handler',
     'NON_FIELD_ERRORS_KEY': 'error',
 
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'authors.apps.authentication.backends.JWTAuthentication',
-    ),
+    # 'DEFAULT_AUTHENTICATION_CLASSES': (
+    #     'authors.apps.authentication.backends.JWTAuthentication',
+    # ),
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 0cd1628... feature(social-authentication): add social authentication with Facebook,Google and Twitter
 AUTHENTICATION_BACKENDS = [
     'rest_framework_social_oauth2.backends.DjangoOAuth2',
    'django.contrib.auth.backends.ModelBackend',
@@ -209,10 +200,6 @@ AUTHENTICATION_BACKENDS = (
     # Django
     'django.contrib.auth.backends.ModelBackend',
 )
-<<<<<<< HEAD
->>>>>>> feature(social-authentication): add social authentication with Facebook,Google and Twitter
-=======
->>>>>>> 0cd1628... feature(social-authentication): add social authentication with Facebook,Google and Twitter
 
 # activate django_heroku
 django_heroku.settings(locals())
