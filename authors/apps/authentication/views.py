@@ -122,7 +122,6 @@ class SocialAuthentication(CreateAPIView):
                 "oauth_token":serializer.data.get('access_token'),
                 "oauth_token_secret":serializer.data.get('access_token_secret')
             }
-            print(token)
 
         if isinstance(backend,BaseOAuth2):
             #Fetch the access token
@@ -139,10 +138,6 @@ class SocialAuthentication(CreateAPIView):
         
         if user and user.is_active:
             serializer = UserSerializer(user)
-            # authenticated_user_created = user.social.auth.get(provider=provider)
-            # if not authenticated_user_created.extra_data['access_token']:
-            #     authenticated_user_created.extra_data['access_token'] = token
-            #     authenticated_user_created.save()
             
             serializer.instance = user
             return Response(serializer.data,status=status.HTTP_201_CREATED)

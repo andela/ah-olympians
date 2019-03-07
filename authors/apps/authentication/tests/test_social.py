@@ -49,13 +49,10 @@ class SocialLoginTest(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    
-    def test_user_is_authenticated(self):
-
-        ''' test if a user is authenticated '''
+    def test_user_provide_all_credential_to_login(self):
 
         token = {
-            "access_token":twitter_access_token,
+            "access_token":"",
             "access_token_secret":twitter_access_token_secret,
             "provider":"twitter"
         }
@@ -65,5 +62,24 @@ class SocialLoginTest(APITestCase):
             token,
             format='json'
         )
-        print(response.data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_provide_access_token_secret_to_login(self):
+        '''
+        test for a user must provide an access token  to login
+        '''
+
+        token = {
+            "access_token":twitter_access_token,
+            "access_token_secret":"",
+            "provider":"twitter"
+        }
+        
+        response = self.client.post(
+            reverse("authentication:login_social"),
+            token,
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+   
