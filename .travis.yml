@@ -9,6 +9,10 @@ install:
   - pip install coveralls
 
 
+addons:
+  postgresql: "9.4"
+
+
 before_script:
   - psql -c 'create database olympians;' -U postgres
 
