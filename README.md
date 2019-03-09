@@ -1,6 +1,6 @@
 Authors Haven - A Social platform for the creative at heart.
 =======
-[![Coverage Status](https://coveralls.io/repos/github/andela/ah-olympians/badge.svg?branch=master)](https://coveralls.io/github/andela/ah-olympians?branch=master)
+[![Build Status](https://travis-ci.org/andela/ah-olympians.svg?branch=develop)](https://travis-ci.org/andela/ah-olympians) [![Coverage Status](https://coveralls.io/repos/github/andela/ah-olympians/badge.svg?branch=develop)](https://coveralls.io/github/andela/ah-olympians?branch=develop)   [![Maintainability](https://api.codeclimate.com/v1/badges/97f346cc71d14ad1f1a2/maintainability)](https://codeclimate.com/github/andela/ah-olympians/maintainability) [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/) <a href="http://www.djangoproject.com/"><img src="https://www.djangoproject.com/m/img/badges/djangomade124x25.gif" border="0" alt="Made with Django." title="Made with Django." /></a>
 ## Vision
 Create a community of like minded authors to foster inspiration and innovation
 by leveraging the modern web.
