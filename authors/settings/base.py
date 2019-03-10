@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'social_django',
     'rest_framework_social_oauth2',
     'cloudinary',
+    'taggit',
 
     'authors.apps.authentication',
     'authors.apps.core',

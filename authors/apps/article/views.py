@@ -3,20 +3,18 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.exceptions import APIException
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from rest_framework.response import Response
+from rest_framework.exceptions import APIException,NotFound,ValidationError
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView
-from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework import serializers, status
 from django.db.models import Avg
 
-from .serializers import ArticleSerializer, RateSerializer
 from .models import Article, ArticleImage, ArticleLikes, ArticleComment, Rate
 from ..profiles.models import UserProfile
-from .serializers import ArticleSerializer, CommentSerializer, DeleteCommentSerializer, RateSerializer
+from .serializers import ArticleSerializer, CommentSerializer, DeleteCommentSerializer, RateSerializer,GetArticleSerializer
 from .renderer import ArticleJSONRenderer, CommentJSONRenderer
+
+from .renderer import ArticleJSONRenderer
 
 
 class ArticlesAPIView(APIView):
@@ -58,8 +56,50 @@ class ArticlesAPIView(APIView):
         Retrieve all articles
         """
         article = Article.objects.all()
-        serializer = ArticleSerializer(article, many=True)
+        serializer = GetArticleSerializer(article, many=True)
         return Response(serializer.data)
+
+
+    def destroy(self, request, slug):
+        """
+         Delete an article you have written
+         :param request: The request sent
+         :param slug: the slug on the url
+         :return: Response
+        """
+        try:
+            article = self.queryset.get(slug=slug)
+        except Article.DoesNotExist:
+            raise APIException('Sorry, we cannot find the article ure looking for')
+
+        if article.author.id == request.user.profile.id:
+            article.delete()
+        else:
+            response = {"message": "unauthorised to perform the action"}
+            return Response(response, status=status.HTTP_401_UNAUTHORIZED)
+        response = {"message": "article deleted"}
+        return Response(response, status=status.HTTP_204_NO_CONTENT)
+
+    def update(self, request, slug):
+        """
+        UPDATE an article
+        :param request:
+        :param slug:
+        :return:
+        """
+        try:
+            article = self.queryset.get(slug=slug)
+        except Article.DoesNotExist:
+            return Response({"error": "the article was not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ArticleSerializer(article, data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if article.author.id == request.user.profile.id:
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            response = {"message": "unauthorised to perform the action"}
+            return Response(response, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class RetrieveArticleAPIView(APIView):
@@ -75,9 +115,9 @@ class RetrieveArticleAPIView(APIView):
         """
         try:
             article = Article.objects.get(slug=slug)
-            serializer = ArticleSerializer(article, many=False)
-            return Response({'article': serializer.data},
-                            status=status.HTTP_200_OK)
+            serializer = GetArticleSerializer(article, many=False)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
         except Article.DoesNotExist:
             return Response(
                 {"message": "The article requested does not exist"},

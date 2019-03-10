@@ -16,7 +16,9 @@ class TestRateArticle(APITestCase):
             "title": "epic",
             "description": "sdsd",
             "body": "dsd",
-            "images": ""
+            "images": "",
+            "tag_list":['kelvin','onkundi']
+
         }
         self.user = {
             "user": {
