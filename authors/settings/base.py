@@ -45,10 +45,12 @@ INSTALLED_APPS = [
     'social_django',
     'rest_framework_social_oauth2',
     'cloudinary',
+    'taggit',
 
     'authors.apps.authentication',
     'authors.apps.core',
     'authors.apps.profiles',
+    'authors.apps.article'
 ]
 
 MIDDLEWARE = [
@@ -157,14 +159,12 @@ REST_FRAMEWORK = {
 
 AUTHENTICATION_BACKENDS = [
     'rest_framework_social_oauth2.backends.DjangoOAuth2',
-   'django.contrib.auth.backends.ModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
 ]
-
-
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ['SOCIAL_AUTH_GOOGLE_OAUTH2_KEY']
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ['SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET']
-#Scope
+# Scope
 SOCIAL_AUTH_GOOGLE_OAUTH_SCOPE = ['email', 'username']
 
 SOCIAL_AUTH_TWITTER_KEY = os.environ['SOCIAL_AUTH_TWITTER_KEY']
@@ -174,9 +174,6 @@ SOCIAL_AUTH_TWITTER_SCOPE = ['email']
 SOCIAL_AUTH_FACEBOOK_KEY = os.environ['SOCIAL_AUTH_FACEBOOK_KEY']
 SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
 SOCIAL_AUTH_FACEBOOK_SECRET = os.environ['SOCIAL_AUTH_FACEBOOK_SECRET']
-
-
-
 
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
@@ -191,7 +188,6 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.user.user_details',
 )
 
-
 AUTHENTICATION_BACKENDS = (
     # Google OAuth2
     'social_core.backends.google.GoogleOAuth2',
@@ -204,15 +200,14 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
-
 # activate django_heroku
 django_heroku.settings(locals())
 
 # cloudinary keys
 
 
-cloudinary.config( 
-  cloud_name = os.environ['CLOUDINARY_NAME'], 
-  api_key = os.environ['CLOUDINARY_API_KEY'],  
-  api_secret = os.environ['CLOUDINARY_API_SECRET']
+cloudinary.config(
+    cloud_name=os.environ['CLOUDINARY_NAME'],
+    api_key=os.environ['CLOUDINARY_API_KEY'],
+    api_secret=os.environ['CLOUDINARY_API_SECRET']
 )

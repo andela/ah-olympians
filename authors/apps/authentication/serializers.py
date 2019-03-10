@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate
 from django.core.validators import RegexValidator
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+from .models import User, EmailVerification
 
 from authors.apps.profiles.serializers import ProfileSerializer
 

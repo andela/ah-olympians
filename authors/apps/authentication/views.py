@@ -3,18 +3,19 @@ from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from social_core.backends.oauth import BaseOAuth2, BaseOAuth1
 from social_core.exceptions import MissingBackend
 from social_django.utils import load_strategy, load_backend
-
+from social_core.backends.oauth import BaseOAuth2, BaseOAuth1
 from .backends import JWTAuthentication
 from .models import User, EmailVerification
 from .renderers import UserJSONRenderer
 from .serializers import (
     LoginSerializer, RegistrationSerializer, UserSerializer,
     PasswordResetRequestSerializer, SetNewPasswordSerializer,
-    EmailVerificationSerializer, SocialSerializer
-)
+    EmailVerificationSerializer, SocialSerializer)
+
+from .models import EmailVerification
+from .renderers import UserJSONRenderer
 from .utils import send_email, verify_message
 
 
@@ -36,7 +37,7 @@ class RegistrationAPIView(APIView):
         user_email = user.email
         username = user.username
         sign_up_message = verify_message(username, token)
-        send_email(user_email, "verify", sign_up_message)
+        send_email(user_email, "Verify Your Email to Complete Your Authors Haven Registration", sign_up_message)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

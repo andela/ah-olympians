@@ -20,11 +20,17 @@ class ModelsTest(APITestCase):
             "password": "07921513542"
         }
 
+        self.user2 = {
+            "email": "kibet@email.com",
+            "username": "kibet",
+            "password": "07921513542"
+        }
+
         self.created_user = User.objects.create_user(**self.user)
-        username_id = self.created_user.id
+        self.username_id = self.created_user.id
 
         self.profile = {
-            "username_id": username_id,
+            "username_id": self.username_id,
             "bio": "am fantastic",
             "interests": "football",
             "favorite_quote": "Yes we can",
@@ -43,8 +49,7 @@ class ModelsTest(APITestCase):
 
 
         self.assertEqual(response.bio, 'am fantastic')
-
-    def test_create_same_profile(self):
+def test_create_same_profile(self):
         """
         test create profile twice
         """

@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (
     LoginAPIView, RegistrationAPIView, UserRetrieveUpdateAPIView,
     UserEmailVerification, ResetPasswordRequestAPIView,
-    SetNewPasswordAPIView,SocialAuthentication
+    SetNewPasswordAPIView, SocialAuthentication
 )
 
 app_name = 'authentication'

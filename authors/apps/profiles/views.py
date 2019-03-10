@@ -1,24 +1,29 @@
 from django.db.utils import IntegrityError
+from django.forms.models import model_to_dict
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import status, response
 from rest_framework.generics import (
 	CreateAPIView, ListAPIView, RetrieveUpdateAPIView,
-	RetrieveAPIView
+	RetrieveAPIView, ListCreateAPIView
 	)
 from rest_framework.permissions import (
 	IsAuthenticated, IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException
+from rest_framework.views import APIView
 
 import psycopg2
 
 from .models import UserProfile
-from .renderers import ProfileJSONRenderer
+from .renderers import (
+	ProfileJSONRenderer, FollowListJSONRenderer)
 from .serializers import (
-    ProfileSerializer, DeactivateSerializer
+    ProfileSerializer, DeactivateSerializer, 
+    FollowSerializer, FollowListSerializer
 )
 from .custom_validations import validate_avatar
+
 
 class CreateProfileAPIView(CreateAPIView):
 	""" A class that contains methods on creating user profile."""
@@ -47,6 +52,9 @@ class CreateProfileAPIView(CreateAPIView):
 			APIException.status_code = status.HTTP_400_BAD_REQUEST
 			raise APIException(
 					{"message": "A user with this profile already exists"})
+
+
+
 
 
 class EditUserProfileAPIView(RetrieveUpdateAPIView):
@@ -107,7 +115,7 @@ class ViewUserProfileAPIView(RetrieveAPIView):
 class ViewAllProfilesAPIView(ListAPIView):
 	""" A class that contains methods on viewing all user profiles."""
 
-	permission_classes = (IsAuthenticatedOrReadOnly,)
+	permission_classes = (IsAuthenticated,)
 	renderer_classes = (ProfileJSONRenderer,)
 	serializer_class = ProfileSerializer
 	queryset = UserProfile.objects.all()
@@ -195,7 +203,8 @@ class ActivateProfileAPIView(RetrieveUpdateAPIView):
 			raise APIException ({"message": "User profile not found"})
 
 		try:
-			get_object_or_404(self.get_queryset(), username_id=self.request.user.id, active_profile=True)
+			get_object_or_404(self.get_queryset(),
+				username_id=self.request.user.id, active_profile=True)
 		except Http404:
 			pass
 		else:
@@ -215,6 +224,118 @@ class ActivateProfileAPIView(RetrieveUpdateAPIView):
 			serializer.save()
 			return Response(serializer.data, status=status.HTTP_200_OK)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FollowAuthorAPIView(APIView):
+	""" A class that contains methods for following other users."""
+
+	serializer_class = FollowSerializer
+	permission_classes = (IsAuthenticated,)
+	queryset = UserProfile.objects.all()
+
+
+	def get_username_id(self):
+		""" A method for validating username_id."""
+		try:
+			username_id = int(self.kwargs.get("username_id"))
+		except ValueError:
+			raise APIException({"message": "User ID must be an integer"})
+		try:
+			self.queryset.get(username_id=username_id)
+		except UserProfile.DoesNotExist:
+			APIException.status_code = status.HTTP_400_BAD_REQUEST
+			raise APIException({"message":
+				"We did not find such a profile."})
+		return username_id
+
+	def post(self, request, *args, **kwargs):
+		""" A method for following other users."""
+		username_id = self.get_username_id()
+		my_profile = self.request.user.profile
+		target_profile = UserProfile.objects.get(username_id=username_id)
+
+		if my_profile.username_id == username_id:
+			APIException.status_code = status.HTTP_400_BAD_REQUEST
+			raise APIException({"message":
+				"You cannot follow yourself."})
+
+		if my_profile.following.filter(username_id=username_id):
+			APIException.status_code = status.HTTP_400_BAD_REQUEST
+			raise APIException({"message":
+				"{}, you already follow {}".format(my_profile.username.username, 
+					target_profile.username.username)})
+
+
+		my_profile.follow(target_profile)
+		serializer = self.serializer_class(target_profile, context={'request': self.request})
+
+		if serializer.data["following"]:
+			return Response(
+				{"message":
+				"{}, you have successfully followed {}".format(my_profile.username.username, 
+					target_profile.username.username)})
+
+	def delete(self, request, *args, **kwargs):
+		""" A method for unfollowing followed users."""
+		username_id = self.get_username_id()
+		my_profile = self.request.user.profile
+		target_profile = UserProfile.objects.get(username_id=username_id)
+
+		if my_profile.username_id == username_id:
+			APIException.status_code = status.HTTP_400_BAD_REQUEST
+			raise APIException({"message":
+				"You cannot unfollow yourself."})
+
+		if not my_profile.following.filter(username_id=username_id):
+			APIException.status_code = status.HTTP_400_BAD_REQUEST
+			raise APIException({"message":
+				"{}, you do not follow {}".format(my_profile.username.username, 
+					target_profile.username.username)})
+
+		my_profile.unfollow(target_profile)
+		serializer = self.serializer_class(target_profile, context={'request': self.request})
+
+		if not serializer.data["following"]:
+			return Response(
+				{"message":
+				"{}, you have successfully unfollowed {}".format(my_profile.username.username, 
+					target_profile.username.username)})
+
+
+class FollowerListAPIView(ListAPIView):
+	""" A class that contains methods on getting list of users a user follows."""
+
+	permission_classes = (IsAuthenticated,)
+	renderer_classes = (FollowListJSONRenderer,)
+	serializer_class = FollowListSerializer
+	queryset = UserProfile.objects.all()
+
+
+	def list(self, request, *args, **kwargs):
+		""" A method that overrides list to get user-specific data."""
+		queryset = request.user.profile.followed_by.all()
+		serializer = self.serializer_class(queryset, many=True)
+		data = {obj['username']: obj for obj in serializer.data}
+		return Response({"followers": data})
+
+class FollowingListAPIView(ListAPIView):
+	""" A class that contains methods on getting list of users that follow a user."""
+
+	permission_classes = (IsAuthenticated,)
+	renderer_classes = (FollowListJSONRenderer,)
+	serializer_class = FollowListSerializer
+	queryset = UserProfile.objects.all()
+
+
+	def list(self, request, *args, **kwargs):
+		""" A method that overrides list to get user-specific data."""
+		queryset = request.user.profile.following.all()
+		serializer = self.serializer_class(queryset, many=True)
+		data = {obj['username']: obj for obj in serializer.data}
+		return Response({"following": data})
+
+
+
 
 
 		
