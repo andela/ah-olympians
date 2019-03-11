@@ -30,47 +30,6 @@ class UserTest(APITestCase):
         self.assertEqual(result["user"]["email"], "caro@yahoo.com")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_register_user_existing_email(self):
-        """
-        test register
-        """
-        # hit the API endpoint
-        response = self.client.post('/api/users/', self.user, format='json')
-
-        self.user['user']['username'] = "kimtai"
-        self.user['user']['password'] = "4567890123"
-        response = self.client.post('/api/users/', self.user, format='json')
-        result = json.loads(response.content)
-
-        self.assertIn('Email is already registered to another user', str(result))
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_register_user_empty_string(self):
-        """
-        test register
-        """
-        # hit the API endpoint
-        response = self.client.post('/api/users/', self.user, format='json')
-
-        self.user['user']['username'] = ""
-        self.user['user']['password'] = ""
-        response = self.client.post('/api/users/', self.user, format='json')
-        result = json.loads(response.content)
-
-        self.assertIn('A username is required to complete registration', str(result))
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_register_user_with_norequired(self):
-        """
-        test register without required fields
-        """
-        # hit the API endpoint
-        response = self.client.post('/api/users/', format='json')
-        result = json.loads(response.content)
-
-        self.assertIn('errors', str(result))
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
     def test_login_user(self):
         """
         test login

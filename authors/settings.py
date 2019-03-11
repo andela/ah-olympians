@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 import django_heroku
+import cloudinary
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     'oauth2_provider',
     'social_django',
     'rest_framework_social_oauth2',
+    'cloudinary',
 
     'authors.apps.authentication',
     'authors.apps.core',
@@ -205,3 +207,12 @@ AUTHENTICATION_BACKENDS = (
 
 # activate django_heroku
 django_heroku.settings(locals())
+
+# cloudinary keys
+
+
+cloudinary.config( 
+  cloud_name = os.environ['CLOUDINARY_NAME'], 
+  api_key = os.environ['CLOUDINARY_API_KEY'],  
+  api_secret = os.environ['CLOUDINARY_API_SECRET']
+)

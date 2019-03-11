@@ -3,6 +3,8 @@ from django.core.validators import RegexValidator
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
+from authors.apps.profiles.serializers import ProfileSerializer
+
 from .models import User, EmailVerification
 
 
