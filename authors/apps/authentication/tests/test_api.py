@@ -83,7 +83,7 @@ class UserTest(APITestCase):
         result = json.loads(response.content)
 
         self.assertIn(
-            'A user with this email and password was not found.', str(result))
+            'Invalid email or password provided.', str(result))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_login_unregistered_user(self):

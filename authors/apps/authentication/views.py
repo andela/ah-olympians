@@ -1,21 +1,19 @@
 from rest_framework import status
-from rest_framework.generics import RetrieveUpdateAPIView,CreateAPIView
+from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from social_django.utils import load_strategy, load_backend
+from social_core.backends.oauth import BaseOAuth2, BaseOAuth1
 from social_core.exceptions import MissingBackend
-from social_core.backends.oauth import BaseOAuth2,BaseOAuth1
-from .utils import send_email, verify_message
-from .models import EmailVerification
-from .renderers import UserJSONRenderer
-from .models import User, EmailVerification
+from social_django.utils import load_strategy, load_backend
+
 from .backends import JWTAuthentication
+from .models import User, EmailVerification
 from .renderers import UserJSONRenderer
 from .serializers import (
     LoginSerializer, RegistrationSerializer, UserSerializer,
     PasswordResetRequestSerializer, SetNewPasswordSerializer,
-    EmailVerificationSerializer,SocialSerializer
+    EmailVerificationSerializer, SocialSerializer
 )
 from .utils import send_email, verify_message
 
@@ -93,8 +91,7 @@ class SocialAuthentication(CreateAPIView):
     renderer_classes = (UserJSONRenderer,)
     serializer_class = SocialSerializer
 
-
-    def create(self,request,*args,**kwargs):
+    def create(self, request, *args, **kwargs):
         '''
         Fetch the access token and then create a user or
         authenticate a user
@@ -104,7 +101,7 @@ class SocialAuthentication(CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         authenticated_user = request.user if not request.user.is_anonymous else None
-        provider =  serializer.data['provider']
+        provider = serializer.data['provider']
 
         strategy = load_strategy(request)
         try:
@@ -112,38 +109,39 @@ class SocialAuthentication(CreateAPIView):
         except MissingBackend as error:
             return Response(
                 {
-                    "errors":{
-                    "provider":["provider was not found",str(error)]
-                }
-                },status=status.HTTP_404_NOT_FOUND)
-        
-        if isinstance(backend,BaseOAuth1):
+                    "errors": {
+                        "provider": ["provider was not found", str(error)]
+                    }
+                }, status=status.HTTP_404_NOT_FOUND)
+
+        if isinstance(backend, BaseOAuth1):
             token = {
-                "oauth_token":serializer.data.get('access_token'),
-                "oauth_token_secret":serializer.data.get('access_token_secret')
+                "oauth_token": serializer.data.get('access_token'),
+                "oauth_token_secret": serializer.data.get('access_token_secret')
             }
 
-        if isinstance(backend,BaseOAuth2):
-            #Fetch the access token
+        if isinstance(backend, BaseOAuth2):
+            # Fetch the access token
             token = serializer.data['access_token']
         try:
-            #check if there is an authenticated user,if true create a new one
-            user = backend.do_auth(token,user=authenticated_user)
+            # check if there is an authenticated user,if true create a new one
+            user = backend.do_auth(token, user=authenticated_user)
             print(user)
         except BaseException as error:
             # you cannot associate a social account with more than one user
 
-            return Response({"errors":str(error)},status=status.HTTP_400_BAD_REQUEST
-            )
-        
+            return Response({"errors": str(error)}, status=status.HTTP_400_BAD_REQUEST
+                            )
+
         if user and user.is_active:
             serializer = UserSerializer(user)
-            
+
             serializer.instance = user
-            return Response(serializer.data,status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return Response({'errors':"Social aunthentication error"},
-            status=status.HTTP_400_BAD_REQUEST)
+            return Response({'errors': "Social aunthentication error"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
 
 class UserEmailVerification(APIView):
     renderer_classes = (UserJSONRenderer,)
@@ -162,6 +160,7 @@ class UserEmailVerification(APIView):
             return Response({"success": "valid token"}, status=status.HTTP_200_OK)
         except EmailVerification.DoesNotExist:
             return Response({"error": "invalid token"}, status=status.HTTP_403_FORBIDDEN)
+
 
 class ResetPasswordRequestAPIView(APIView):
     """This view class provides a view to request a password reset.
