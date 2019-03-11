@@ -1,24 +1,30 @@
-from django.contrib.auth import authenticate, password_validation
+from django.contrib.auth import authenticate
 from django.core.validators import RegexValidator
-from rest_framework.validators import UniqueValidator
-
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from .models import User, EmailVerification
 
 
+def validate_password():
+    """
+    Validates if a string has on alpha-numeric characters
+    :return: None or Message that a string is not valid
+    """
+    return RegexValidator(
+        r'^[0-9a-zA-Z]+$',
+        "Only numbers and letters are allowed in password")
+
+
 class RegistrationSerializer(serializers.ModelSerializer):
     """Serializers registration requests and creates a new user."""
-
-    alphanumeric = RegexValidator(r'^[0-9a-zA-Z]+$', "Only numbers and letters are allowed in password")
-
     # Ensure passwords are at least 8 characters long, no longer than 128
     # characters, and can not be read by the client.
     password = serializers.CharField(
         max_length=128,
         min_length=8,
         write_only=True,
-        validators=[alphanumeric],
+        validators=[validate_password()],
         error_messages={
             "min_length": "Please ensure that your password has more than 8 characters",
             "blank": "A password is required to complete registration",
@@ -100,7 +106,7 @@ class LoginSerializer(serializers.Serializer):
         # `authenticate` will return `None`. Raise an exception in this case.
         if user is None:
             raise serializers.ValidationError(
-                'A user with this email and password was not found.'
+                'Invalid email or password provided.'
             )
 
         # Django provides a flag on our `User` model called `is_active`. The
@@ -174,10 +180,11 @@ class UserSerializer(serializers.ModelSerializer):
 
         return instance
 
+
 class SocialSerializer(serializers.Serializer):
-    access_token = serializers.CharField(max_length=270,required=True)
-    access_token_secret = serializers.CharField(max_length=300,allow_blank=True)
-    provider = serializers.CharField(max_length=270,required=True)
+    access_token = serializers.CharField(max_length=270, required=True)
+    access_token_secret = serializers.CharField(max_length=300, allow_blank=True)
+    provider = serializers.CharField(max_length=270, required=True)
 
 
 class EmailVerificationSerializer(serializers.ModelSerializer):
@@ -206,7 +213,8 @@ class SetNewPasswordSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         max_length=128,
         min_length=8,
-        write_only=True
+        write_only=True,
+        validators=[validate_password()]
     )
 
     class Meta:
