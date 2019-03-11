@@ -29,8 +29,8 @@ def send_email(to_email, subject, message):
 
 
 def verify_message(name, token):
-    message = "Thank you " + name + " for registering with us please verify your email\n" \
-                                    " by clicking on the following link\n" \
+    message = " Thank you " + name + " for registering with us please verify your email\n " \
+                                    "by clicking on the following link\n " \
               + os.getenv("URL") + "/verify/" + token + "\n Welcome"
 
     return message
