@@ -202,26 +202,26 @@ class TestArticle(APITestCase):
         self.assertEqual(response_article.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_delete_article(self):
-        """
-        test the delete method
-        :return:
-        """
-        token_request = json.loads(self.request_tkn.content)
-        token = token_request["user"]["token"]
-        response = self.client.post('/api/articles/', self.article,
-                                    HTTP_AUTHORIZATION='Token ' + self.token,
-                                    format='json')
-        result = json.loads(response.content)
-        slug = result["article"]["slug"]
+       """
+       test the delete method
+       :return:
+       """
+       token_request = json.loads(self.request_tkn.content)
+       token = token_request["user"]["token"]
+       response = self.client.post('/api/articles/', self.article,
+                                   HTTP_AUTHORIZATION='Token ' + self.token,
+                                   format='json')
+       result = json.loads(response.content)
+       slug = result["article"]["slug"]
 
-        response_article = self.client.delete('/api/articles/andela',
-                                              HTTP_AUTHORIZATION='Token ' + self.token,
-                                              format='json')
-        article = json.loads(response_article.content)
+       response_article = self.client.delete('/api/articles/andela',
+                                             HTTP_AUTHORIZATION='Token ' + self.token,
+                                             format='json')
+       article = json.loads(response_article.content)
 
-        self.assertIn(
-            'article deleted', str(article))
-        self.assertEqual(response_article.status_code, status.HTTP_202_ACCEPTED)
+       self.assertIn(
+           'article deleted', str(article))
+       self.assertEqual(response_article.status_code, status.HTTP_202_ACCEPTED)
 
     def test_delete_unexistting_article(self):
         """

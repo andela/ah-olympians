@@ -12,7 +12,7 @@ class UserProfile(models.Model):
     website = models.URLField(blank=True, default='')
     contact_phone = models.IntegerField(blank=True, default=0)
     created = models.DateTimeField(auto_now_add=True)
-    username = models.OneToOneField('authentication.User', related_name="profile", on_delete=models.CASCADE)
+    username = models.OneToOneField('authentication.User', related_name="profile", on_delete=models.CASCADE , primary_key=True)
     following = models.BooleanField(default=False)
     active_profile = models.BooleanField(default=True)
 
