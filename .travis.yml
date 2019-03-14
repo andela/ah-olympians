@@ -11,9 +11,6 @@ install:
 addons:
   postgresql: "9.4"
 
-addons:
-  postgresql: "9.4"
-
 
 before_script:
   - psql -c 'create database olympians;' -U postgres
