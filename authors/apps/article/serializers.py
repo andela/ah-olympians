@@ -3,8 +3,7 @@ from django.db.models import Avg
 from rest_framework import serializers
 
 from authors.apps.authentication.serializers import UserSerializer
-from .models import Article, ArticleLikes
-from .models import Rate
+from .models import Article, ArticleLikes, Rate
 
 
 class LikesSerializer(serializers.ModelSerializer):
@@ -16,6 +15,11 @@ class LikesSerializer(serializers.ModelSerializer):
     class Meta:
         model = ArticleLikes
         fields = ('user',)
+
+from .models import Article, ArticleComment
+
+from authors.apps.authentication.serializers import UserSerializer
+from ..profiles.serializers import ProfileSerializer
 
 
 class ArticleSerializer(serializers.ModelSerializer):
@@ -145,3 +149,34 @@ class RateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rate
         fields = ('article', 'average_rating', 'rate_count', 'your_rating')
+
+
+class SubcommentSerializer(serializers.ModelSerializer):
+    author = ProfileSerializer(read_only=True)
+
+    class Meta:
+        model = ArticleComment
+        fields = ['id', 'article', 'createdAt', 'updatedAt',
+                  'body', 'author', 'is_active', 'subcomments']
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    """
+    converts the model into JSON format
+    """
+    subcomments = SubcommentSerializer(many=True, read_only=True)
+    author = ProfileSerializer(read_only=True)
+
+    class Meta:
+        model = ArticleComment
+        fields = ['id', 'article', 'createdAt', 'updatedAt',
+                  'body', 'author', 'is_active', 'subcomments']
+
+
+class DeleteCommentSerializer(serializers.ModelSerializer):
+    """
+    converts the model into JSON format
+    """
+    class Meta:
+        model = ArticleComment
+        fields = ['is_active']
