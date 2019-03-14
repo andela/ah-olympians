@@ -8,7 +8,6 @@ install:
   - pip install -r requirements.txt
   - pip install coveralls
 
-
 addons:
   postgresql: "9.4"
 
@@ -18,11 +17,13 @@ before_script:
 
 # run tests
 
-script: 
-  - python manage.py makemigrations
-  - python manage.py migrate
+script:
+  - python manage.py makemigrations authentication
+  - python manage.py migrate authentication
   - python manage.py makemigrations profiles
   - python manage.py migrate profiles
+  - python manage.py makemigrations article
+  - python manage.py migrate article
   - coverage run --source=authors.apps manage.py test
   - coverage report
     

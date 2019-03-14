@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'authors.apps.authentication',
     'authors.apps.core',
     'authors.apps.profiles',
+    'authors.apps.article'
 ]
 
 MIDDLEWARE = [
@@ -204,8 +205,8 @@ django_heroku.settings(locals())
 # cloudinary keys
 
 
-cloudinary.config( 
-  cloud_name = os.environ['CLOUDINARY_NAME'], 
-  api_key = os.environ['CLOUDINARY_API_KEY'],  
-  api_secret = os.environ['CLOUDINARY_API_SECRET']
+cloudinary.config(
+    cloud_name=os.environ['CLOUDINARY_NAME'],
+    api_key=os.environ['CLOUDINARY_API_KEY'],
+    api_secret=os.environ['CLOUDINARY_API_SECRET']
 )

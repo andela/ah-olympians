@@ -12,8 +12,10 @@ from .renderers import UserJSONRenderer
 from .serializers import (
     LoginSerializer, RegistrationSerializer, UserSerializer,
     PasswordResetRequestSerializer, SetNewPasswordSerializer,
-    EmailVerificationSerializer, SocialSerializer
-)
+    EmailVerificationSerializer, SocialSerializer)
+
+from .models import EmailVerification
+from .renderers import UserJSONRenderer
 from .utils import send_email, verify_message
 
 
