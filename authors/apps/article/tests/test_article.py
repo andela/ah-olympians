@@ -147,8 +147,8 @@ class TestArticle(APITestCase):
                                     format='json')
         result = json.loads(response.content)
 
-        self.assertIn('the slug is already used', str(result))
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertIn('article with this slug already exists.', str(result))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_view_all_articles(self):
         """
