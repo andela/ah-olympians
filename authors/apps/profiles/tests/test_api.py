@@ -3,6 +3,7 @@ import json
 from rest_framework.test import APITestCase, APIClient
 from rest_framework.views import status
 from ...authentication.models import User
+from ..models import UserProfile
 
 # tests for Endpoints
 
@@ -310,4 +311,299 @@ class UserTest(APITestCase):
         self.assertEqual(result["profile"]["message"],
             "Only '.png', '.jpg', '.jpeg' files are accepted")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class TestFollowUnFollow(APITestCase):
+    client = APIClient()
+
+    def setUp(self):
+        self.user = {
+            "user": {
+                "email": "caro@yahoo.com",
+                "username": "caro",
+                "password": "07921513542"
+            }
+        }
+
+        self.profile = {
+            "bio": "am fantastic",
+            "interests": "football",
+            "favorite_quote": "Yes we can",
+            "mailing_address": "P.O BOX 1080",
+            "website": "http://www.web.com",
+            "active_profile": True
+        }
+
+        self.user2 = {
+            "user": {
+                "email": "kibet@yahoo.com",
+                "username": "kibet",
+                "password": "07921513542"
+            }
+        }
+
+        self.profile2 = {
+            "bio": "yeah",
+            "interests": "Money",
+            "favorite_quote": "Yes we can",
+            "mailing_address": "P.O BOX 1080",
+            "website": "http://www.web.com",
+            "active_profile": True
+        }
+
+        self.user3 = {
+            "user": {
+                "email": "winnie@yahoo.com",
+                "username": "winnie",
+                "password": "07921513542"
+            }
+        }
+
+        self.profile3 = {
+            "bio": "Whaaat",
+            "interests": "Fun",
+            "favorite_quote": "Yes we can",
+            "mailing_address": "P.O BOX 1080",
+            "website": "http://www.web.com",
+            "active_profile": True
+        }
+
+
+
+        # create users
+        result = self.client.post('/api/users/', self.user, format='json')
+        result = self.client.post('/api/users/', self.user2, format='json')
+        result = self.client.post('/api/users/', self.user3, format='json')
+        # create profile
+        response = self.client.post(
+            '/api/users/login/', self.user, format='json')
+        result = json.loads(response.content)
+        token = result["user"]["token"]
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + token)
+
+        result = self.client.post('/api/profile/create_profile/', self.profile, format='json')
+    
+    def test_follow_profile(self):
+        response = self.client.post(
+            '/api/users/login/', self.user2, format='json')
+        result = json.loads(response.content)
+        token = result["user"]["token"]
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + token)
+
+        result = self.client.post('/api/profile/create_profile/', self.profile2, format='json')
+
+        target_profile = User.objects.get(username="caro")
+        response = self.client.post('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        result = json.loads(response.content)
+
+        self.assertEqual(result["message"],
+            "{}, you have successfully followed {}".format(self.user2["user"]["username"],
+                self.user["user"]["username"]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_unfollow_profile(self):
+        response = self.client.post(
+            '/api/users/login/', self.user2, format='json')
+        result = json.loads(response.content)
+        token = result["user"]["token"]
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + token)
+
+        result = self.client.post('/api/profile/create_profile/', self.profile2, format='json')
+
+        target_profile = User.objects.get(username="caro")
+        self.client.post('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        response = self.client.delete('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        result = json.loads(response.content)
+
+        self.assertEqual(result["message"],
+            "{}, you have successfully unfollowed {}".format(self.user2["user"]["username"],
+                self.user["user"]["username"]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_follow_profile_wrong_id(self):
+        response = self.client.post(
+            '/api/users/login/', self.user2, format='json')
+        result = json.loads(response.content)
+        token = result["user"]["token"]
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + token)
+
+        result = self.client.post('/api/profile/create_profile/', self.profile2, format='json')
+
+        target_profile = "n"
+        response = self.client.post('/api/profile/view_profile/' + str(target_profile) + '/follow/', format='json')
+        result = json.loads(response.content)
+
+        self.assertEqual(result["message"],
+            "User ID must be an integer")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_follow_nonexistent_profile(self):
+        response = self.client.post(
+            '/api/users/login/', self.user2, format='json')
+        result = json.loads(response.content)
+        token = result["user"]["token"]
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + token)
+
+        result = self.client.post('/api/profile/create_profile/', self.profile2, format='json')
+
+        target_profile = User.objects.get(username="winnie")
+        response = self.client.post('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        result = json.loads(response.content)
+
+        self.assertEqual(result["message"],
+            "We did not find such a profile.")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_follow_profile_twice(self):
+        response = self.client.post(
+            '/api/users/login/', self.user2, format='json')
+        result = json.loads(response.content)
+        token = result["user"]["token"]
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + token)
+
+        result = self.client.post('/api/profile/create_profile/', self.profile2, format='json')
+
+        target_profile = User.objects.get(username="caro")
+        self.client.post('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        response = self.client.post('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        result = json.loads(response.content)
+
+        self.assertEqual(result["message"],
+            "{}, you already follow {}".format(self.user2["user"]["username"],
+                self.user["user"]["username"]))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_unfollow_profile_twice(self):
+        response = self.client.post(
+            '/api/users/login/', self.user2, format='json')
+        result = json.loads(response.content)
+        token = result["user"]["token"]
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + token)
+
+        result = self.client.post('/api/profile/create_profile/', self.profile2, format='json')
+
+        target_profile = User.objects.get(username="caro")
+        self.client.post('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        self.client.delete('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        response = self.client.delete('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        result = json.loads(response.content)
+
+        self.assertEqual(result["message"],
+            "{}, you do not follow {}".format(self.user2["user"]["username"],
+                self.user["user"]["username"]))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_follow_self(self):
+        response = self.client.post(
+            '/api/users/login/', self.user2, format='json')
+        result = json.loads(response.content)
+        token = result["user"]["token"]
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + token)
+
+        result = self.client.post('/api/profile/create_profile/', self.profile2, format='json')
+
+        target_profile = User.objects.get(username="kibet")
+        response = self.client.post(
+            '/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        result = json.loads(response.content)
+
+        self.assertEqual(result["message"],
+            "You cannot follow yourself.")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_unfollow_self(self):
+        response = self.client.post(
+            '/api/users/login/', self.user2, format='json')
+        result = json.loads(response.content)
+        token = result["user"]["token"]
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + token)
+
+        result = self.client.post(
+            '/api/profile/create_profile/', self.profile2, format='json')
+
+        target_profile = User.objects.get(username="kibet")
+        response = self.client.delete(
+            '/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        result = json.loads(response.content)
+
+        self.assertEqual(result["message"],
+            "You cannot unfollow yourself.")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_following_list(self):
+        response = self.client.post(
+            '/api/users/login/', self.user2, format='json')
+        result = json.loads(response.content)
+        token = result["user"]["token"]
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + token)
+
+        result = self.client.post(
+            '/api/profile/create_profile/', self.profile2, format='json')
+
+        target_profile = User.objects.get(username="caro")
+        response = self.client.post(
+            '/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+
+        response = self.client.get(
+            '/api/profile/view_profile/following/', format='json')
+        result = json.loads(response.content)
+
+        self.assertIn("caro", result["profile"]["following"])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_followers_list(self):
+        response = self.client.post(
+            '/api/users/login/', self.user2, format='json')
+        result = json.loads(response.content)
+        token = result["user"]["token"]
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + token)
+
+        result = self.client.post(
+            '/api/profile/create_profile/', self.profile2, format='json')
+
+        target_profile = User.objects.get(username="caro")
+        response = self.client.post(
+            '/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+
+        response = self.client.post(
+            '/api/users/login/', self.user, format='json')
+        result = json.loads(response.content)
+        token = result["user"]["token"]
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + token)
+
+        response = self.client.get(
+            '/api/profile/view_profile/followers/', format='json')
+        result = json.loads(response.content)
+
+        self.assertIn("kibet", result["profile"]["followers"])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+        
+
+
    
