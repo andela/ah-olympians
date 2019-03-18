@@ -1,27 +1,32 @@
-from rest_framework import serializers
-from .models import Article
 from django.core.validators import MinValueValidator, MaxValueValidator
-from .models import Rate
 from django.db.models import Avg
-
+from rest_framework import serializers
 
 from authors.apps.authentication.serializers import UserSerializer
+from .models import Article, ArticleLikes
+from .models import Rate
+
+
+class LikesSerializer(serializers.ModelSerializer):
+    """
+    This class serializes data from ArticleLikes model
+    """
+    user = UserSerializer()
+
+    class Meta:
+        model = ArticleLikes
+        fields = ('user',)
 
 
 class ArticleSerializer(serializers.ModelSerializer):
     """
     converts the model into JSON format
     """
-
-    title = serializers.CharField(required=True)
-    slug = serializers.SlugField(required=False)
-    description = serializers.CharField(required=True)
-    body = serializers.CharField(required=True)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
-    favourited = serializers.BooleanField(required=False)
-    rates = serializers.SerializerMethodField()
     author = UserSerializer(read_only=True)
+    likes = serializers.SerializerMethodField()
+    dislikes = serializers.SerializerMethodField()
+    likes_count = serializers.SerializerMethodField()
+    dislikes_count = serializers.SerializerMethodField()
 
     def get_rates(self, obj):
         """
@@ -35,12 +40,60 @@ class ArticleSerializer(serializers.ModelSerializer):
             return average_rating
 
         return average['your_rating__avg']
-     
 
     class Meta:
         model = Article
-        fields = ['title', 'description',
-                  'body', 'created_at', 'updated_at', 'slug', 'favourited','rates', 'author']
+
+        fields = [
+            'title',
+            'description',
+            'body',
+            'created_at',
+            'updated_at',
+            'slug',
+            'favourited',
+            'author',
+            'likes_count',
+            'dislikes_count',
+            'likes',
+            'dislikes',
+        ]
+
+    def get_likes(self, obj):
+        """
+        This method returns users who liked an Article
+        :param obj: This is the Article object
+        :return: users who liked an article
+        """
+        query = obj.liked.filter(likes=1)
+        return LikesSerializer(query, many=True).data
+
+    def get_dislikes(self, obj):
+        """
+        This method returns users who disliked an Article
+        :param obj: This is the Article object
+        :return: users who liked an article
+        """
+        query = obj.liked.filter(dislikes=-1)
+        return LikesSerializer(query, many=True).data
+
+    def get_likes_count(self, obj):
+        """
+        This method returns number of users who liked an Article
+        :param obj: This is the Article object
+        :return: count of users who liked an article
+        """
+        return obj.liked.filter(likes=1).count()
+
+    def get_dislikes_count(self, obj):
+        """
+        This method returns number of users who disliked an Article
+        :param obj: This is the Article object
+        :return: count of users who disliked an article
+        """
+        return obj.liked.filter(dislikes=-1).count()
+
+
 class RateSerializer(serializers.ModelSerializer):
     """
         Rating model serializers
@@ -60,7 +113,7 @@ class RateSerializer(serializers.ModelSerializer):
             )
         ],
         error_messages={
-            'required':'rating is required'
+            'required': 'rating is required'
         }
     )
     article = serializers.SerializerMethodField()
@@ -92,4 +145,3 @@ class RateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rate
         fields = ('article', 'average_rating', 'rate_count', 'your_rating')
-
