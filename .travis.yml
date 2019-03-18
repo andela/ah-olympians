@@ -18,13 +18,13 @@ before_script:
 # run tests
 
 script:
-  - python manage.py makemigrations authentication
-  - python manage.py migrate authentication
-  - python manage.py makemigrations profiles
-  - python manage.py migrate profiles
-  - python manage.py makemigrations article
-  - python manage.py migrate article
-  - coverage run --source=authors.apps manage.py test
+  - python manage.py makemigrations authentication --settings=authors.settings.test
+  - python manage.py migrate authentication --settings=authors.settings.test
+  - python manage.py makemigrations profiles --settings=authors.settings.test
+  - python manage.py migrate profiles --settings=authors.settings.test
+  - python manage.py makemigrations article --settings=authors.settings.test
+  - python manage.py migrate article --settings=authors.settings.test
+  - coverage run --source=authors.apps ./manage.py test --settings=authors.settings.test
   - coverage report
     
 after_success:
