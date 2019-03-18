@@ -14,7 +14,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 				'username_id', 'username', 'bio',
 				'avatar', 'interests', 'favorite_quote',
 				'created', 'mailing_address', 'website',
-				'contact_phone', 'active_profile'
+				'contact_phone', 'active_profile', 'following'
 				]
 
 

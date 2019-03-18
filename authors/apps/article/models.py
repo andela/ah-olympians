@@ -8,6 +8,7 @@ from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 
 from authors.apps.authentication.models import User
+from ..profiles.models import UserProfile
 
 
 # Create your models here.
@@ -41,9 +42,6 @@ class Article(models.Model):
                 origin += 1
             self.slug = unique_slug
         super().save(*args, **kwargs)
-
-    class Meta:
-        ordering = ('created_at',)
 
 
 class ArticleImage(models.Model):
@@ -144,3 +142,21 @@ class ArticleLikes(models.Model):
                 'Successfully undid (dis)like on {} article'.format(slug),
             'article': ArticleSerializer(article).data
         }, status=status.HTTP_202_ACCEPTED)
+        
+class ArticleComment(models.Model):
+    createdAt = models.DateTimeField(auto_now_add=True)
+    updatedAt = models.DateTimeField(auto_now=True)
+    article = models.ForeignKey(
+        Article, related_name="comments", on_delete=models.CASCADE, to_field="slug")
+    parent_comment = models.ForeignKey(
+        'self', related_name='subcomments',  on_delete=models.CASCADE, blank=True, null=True)
+    body = models.TextField(blank=False)
+    author = models.ForeignKey(
+        UserProfile, related_name="comments", on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ('createdAt',)
+
+    def __str__(self):
+        return self.body[:20]

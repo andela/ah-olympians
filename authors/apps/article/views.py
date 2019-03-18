@@ -1,4 +1,8 @@
 from django.db.utils import IntegrityError
+from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
+from rest_framework import status
 from rest_framework.exceptions import APIException
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -9,9 +13,10 @@ from rest_framework import serializers, status
 from django.db.models import Avg
 
 from .serializers import ArticleSerializer, RateSerializer
-from .models import Article, ArticleImage, ArticleLikes, Rate
-from .renderer import ArticleJSONRenderer
-from .serializers import ArticleSerializer
+from .models import Article, ArticleImage, ArticleLikes, ArticleComment, Rate
+from ..profiles.models import UserProfile
+from .serializers import ArticleSerializer, CommentSerializer, DeleteCommentSerializer, RateSerializer
+from .renderer import ArticleJSONRenderer, CommentJSONRenderer
 
 
 class ArticlesAPIView(APIView):
@@ -280,3 +285,144 @@ class DislikeAPIView(APIView):
         message = ArticleLikes.user_likes(request.user, slug,
                                           ArticleSerializer, -1)
         return message
+
+
+class CommentVerification(object):
+
+    def article_exists(self, slug):
+        try:
+            Article.objects.get(slug=slug)
+        except (Exception, Article.DoesNotExist):
+            APIException.status_code = status.HTTP_404_NOT_FOUND
+            raise APIException({"error": "Article does not exist!"})
+
+        return True
+
+    def comment_exists(self, slug, pk):
+        try:
+            expected_comment = ArticleComment.objects.get(
+                id=pk, article=slug, is_active=True)
+        except (Exception, ArticleComment.DoesNotExist):
+            APIException.status_code = status.HTTP_404_NOT_FOUND
+            raise APIException({"error": "comment does not exist!"})
+
+        return expected_comment
+
+    def check_permision(self, owner, requester):
+        if owner != requester:
+            APIException.status_code = status.HTTP_403_FORBIDDEN
+            raise APIException(
+                {"error": "You do not have that permission on this comment!"})
+
+        return True
+
+    def check_profile(self, user_id):
+        try:
+            UserProfile.objects.get(username_id=user_id, active_profile=True)
+        except UserProfile.DoesNotExist:
+            APIException.status_code = status.HTTP_403_FORBIDDEN
+            raise APIException(
+                {"error": "Permission denied! You don't have a profile"})
+
+
+class CommentsAPIView(APIView):
+
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (CommentJSONRenderer,)
+    serializer_class = CommentSerializer
+
+    def post(self, request, slug):
+        CommentVerification.check_profile(self, request.user.id)
+        CommentVerification.article_exists(self, slug)
+        new_comment = request.data.get('comment', {})
+
+        new_comment["article"] = slug
+
+        serializer = self.serializer_class(data=new_comment)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(author=request.user.profile)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def get(self, request, slug):
+        CommentVerification.article_exists(self, slug)
+
+        serializer = self.serializer_class(ArticleComment.objects.filter(
+            article=slug, parent_comment=None), many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class RetrieveCommentsAPIView(APIView):
+
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (CommentJSONRenderer,)
+    serializer_class = CommentSerializer
+
+    def get(self, request, **kwargs):
+        serializer = self.serializer_class(
+            CommentVerification.comment_exists(self, kwargs['slug'], kwargs['pk']))
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, **kwargs):
+        CommentVerification.check_profile(self, request.user.id)
+        update_comment = CommentVerification.comment_exists(
+            self, kwargs['slug'], kwargs['pk'])
+
+        CommentVerification.check_permision(
+            self, update_comment.author, request.user.profile)
+
+        updated_data = request.data.get('comment', {})
+        serializer = CommentSerializer(
+            update_comment, data=updated_data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, **kwargs):
+        CommentVerification.check_profile(self, request.user.id)
+        delete_comment = CommentVerification.comment_exists(
+            self, kwargs['slug'], kwargs['pk'])
+
+        CommentVerification.check_permision(
+            self, delete_comment.author, request.user.profile)
+
+        serializer = DeleteCommentSerializer(
+            delete_comment, data={"is_active": False})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({"message": "comment deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+
+class SubCommentAPIView(APIView):
+
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (CommentJSONRenderer,)
+    serializer_class = CommentSerializer
+
+    def post(self, request, **kwargs):
+        CommentVerification.check_profile(self, request.user.id)
+        new_comment = request.data.get('comment', {})
+
+        parent_article = CommentVerification.comment_exists(
+            self, kwargs['slug'], kwargs['pk'])
+
+        new_comment["article"] = kwargs['slug']
+
+        serializer = self.serializer_class(data=new_comment)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(author=request.user.profile,
+                        parent_comment=parent_article)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def get(self, request, **kwargs):
+        CommentVerification.comment_exists(self, kwargs['slug'], kwargs['pk'])
+
+        serializer = self.serializer_class(ArticleComment.objects.filter(
+            article=kwargs['slug'], parent_comment=kwargs['pk']), many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -100,4 +100,3 @@ db.sqlite3
 
 #migration
 **/migrations/*
-!**/migrations/__init__.py
