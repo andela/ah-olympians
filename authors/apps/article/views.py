@@ -117,7 +117,7 @@ class RetrieveArticleAPIView(APIView):
             article = Article.objects.get(slug=slug)
             serializer = GetArticleSerializer(article, many=False)
             return Response(serializer.data, status=status.HTTP_200_OK)
-            
+
         except Article.DoesNotExist:
             return Response(
                 {"message": "The article requested does not exist"},
