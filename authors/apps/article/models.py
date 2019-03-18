@@ -17,6 +17,7 @@ class Article(models.Model):
     favourited = models.BooleanField(default=False)
     author = models.ForeignKey(User, related_name="articles", on_delete=models.CASCADE)
 
+
     def __str__(self):
         return self.title
 
@@ -57,3 +58,19 @@ class ArticleImage(models.Model):
 
     class Meta:
         ordering = ('created',)
+class Rate(models.Model):
+    """
+        Rate model schema
+    """
+    user = models.ForeignKey(
+        User,
+        related_name="rater",
+        on_delete=models.CASCADE)
+
+    article = models.ForeignKey(
+        Article,
+        related_name='rated_article',
+        on_delete=models.CASCADE
+    )
+
+    your_rating = models.FloatField(null=False)

@@ -49,6 +49,9 @@ class CreateProfileAPIView(CreateAPIView):
 					{"message": "A user with this profile already exists"})
 
 
+
+
+
 class EditUserProfileAPIView(RetrieveUpdateAPIView):
 	""" A class that contains methods on updating user profiles."""
 

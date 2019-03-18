@@ -43,8 +43,7 @@ class ModelsTest(APITestCase):
 
 
         self.assertEqual(response.bio, 'am fantastic')
-
-    def test_create_same_profile(self):
+def test_create_same_profile(self):
         """
         test create profile twice
         """
@@ -58,3 +57,4 @@ class ModelsTest(APITestCase):
             res2.save()
 
         self.assertIn('duplicate key', str(e.exception))
+   
