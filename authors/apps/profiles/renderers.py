@@ -1,3 +1,5 @@
+from django.utils.timezone import now
+
 import json
 
 from rest_framework.renderers import JSONRenderer
@@ -28,6 +30,25 @@ class ProfileJSONRenderer(JSONRenderer):
         if data.get("avatar"):
             avatar_prefix = "https://res.cloudinary.com/jumakahiga/"
             data["avatar"] = avatar_prefix + data["avatar"]
+
+        # Finally, we can render our data under the "user" namespace.
+        return json.dumps({
+            'profile': data
+        })
+
+class FollowListJSONRenderer(JSONRenderer):
+    charset = 'utf-8'
+
+    def render(self, data, media_type=None, renderer_context=None):
+        errors = data.get('errors', None)
+        token = data.get('token', None)
+
+        if errors is not None:
+            return super(ProfileJSONRenderer, self).render(data)
+
+        if token is not None and isinstance(token, bytes):
+            data['token'] = token.decode('utf-8')
+
 
         # Finally, we can render our data under the "user" namespace.
         return json.dumps({
