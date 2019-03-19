@@ -148,7 +148,8 @@ class ArticleLikes(models.Model):
                 'Successfully undid (dis)like on {} article'.format(slug),
             'article': ArticleSerializer(article).data
         }, status=status.HTTP_202_ACCEPTED)
-        
+
+
 class ArticleComment(models.Model):
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
@@ -159,6 +160,8 @@ class ArticleComment(models.Model):
     body = models.TextField(blank=False)
     author = models.ForeignKey(
         UserProfile, related_name="comments", on_delete=models.CASCADE)
+    like = models.BooleanField(default=False)
+    dislike = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -167,3 +170,61 @@ class ArticleComment(models.Model):
     def __str__(self):
         return self.body[:20]
 
+
+class LikeComment(models.Model):
+    """This class creates a model for comments likes and dislikes"""
+    user_like = models.ForeignKey(
+        UserProfile, related_name='likes', on_delete=models.CASCADE)
+    comment = models.ForeignKey(
+        ArticleComment, on_delete=models.CASCADE, related_name='likes')
+    like_type = models.CharField(max_length=10, choices=(
+        ('L', 'like'), ('D', 'dislike')), default='like')
+    created = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ('created',)
+
+    @staticmethod
+    def get_like_status(user_id, comment_id, like_type):
+        try:
+            like_comment = LikeComment.objects.get(
+                user_like=user_id, comment=comment_id, like_type=like_type)
+            return like_comment
+        except LikeComment.DoesNotExist:
+            pass
+
+        return False
+
+    @staticmethod
+    def comment_like_unlike(user_id, comment_id):
+        like_status = LikeComment.get_like_status(user_id, comment_id, 'like')
+        return_message = {"message": "comment liked successfully"}
+
+        if LikeComment.get_like_status(user_id, comment_id, 'dislike') != False:
+            LikeComment.objects.update(like_type='like')
+        elif like_status == False:
+            LikeComment.objects.create(
+                user_like=user_id, comment_id=comment_id, like_type='like')
+        else:
+            like_status.delete()
+            return_message = {"message": "comment unliked successfully"}
+
+        return return_message
+
+    @staticmethod
+    def comment_dislike(user_id, comment_id):
+        like_status = LikeComment.get_like_status(
+            user_id, comment_id, 'dislike')
+        return_message = {"message": "comment disliked successfully"}
+
+        if LikeComment.get_like_status(user_id, comment_id, 'like') != False:
+            LikeComment.objects.update(like_type='dislike')
+        elif like_status == False:
+            LikeComment.objects.create(
+                user_like=user_id, comment_id=comment_id, like_type='dislike')
+        else:
+            like_status.delete()
+            return_message = {
+                "message": "comment dislike removed successfully"}
+
+        return return_message

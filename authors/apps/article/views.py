@@ -3,15 +3,16 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.exceptions import APIException,NotFound,ValidationError
+from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView
 from rest_framework import serializers, status
 from django.db.models import Avg
 
-from .models import Article, ArticleImage, ArticleLikes, ArticleComment, Rate
+from .serializers import ArticleSerializer, RateSerializer
+from .models import Article, ArticleImage, ArticleLikes, ArticleComment, Rate, LikeComment
 from ..profiles.models import UserProfile
-from .serializers import ArticleSerializer, CommentSerializer, DeleteCommentSerializer, RateSerializer,GetArticleSerializer
+from .serializers import ArticleSerializer, CommentSerializer, DeleteCommentSerializer, RateSerializer, GetArticleSerializer
 from .renderer import ArticleJSONRenderer, CommentJSONRenderer
 
 from .renderer import ArticleJSONRenderer
@@ -59,7 +60,6 @@ class ArticlesAPIView(APIView):
         serializer = GetArticleSerializer(article, many=True)
         return Response(serializer.data)
 
-
     def destroy(self, request, slug):
         """
          Delete an article you have written
@@ -70,7 +70,8 @@ class ArticlesAPIView(APIView):
         try:
             article = self.queryset.get(slug=slug)
         except Article.DoesNotExist:
-            raise APIException('Sorry, we cannot find the article ure looking for')
+            raise APIException(
+                'Sorry, we cannot find the article ure looking for')
 
         if article.author.id == request.user.profile.id:
             article.delete()
@@ -215,7 +216,7 @@ class RateAPIView(GenericAPIView):
             'message': 'rate_success',
             'data': serializer.data
         },
-                        status=status.HTTP_201_CREATED)
+            status=status.HTTP_201_CREATED)
 
     def get(self, request, slug):
         """
@@ -255,7 +256,7 @@ class RateAPIView(GenericAPIView):
                     'rate_count': count,
                     'your_rating': 'rating_not_found'
                 },
-                                status=status.HTTP_200_OK)
+                    status=status.HTTP_200_OK)
             else:
                 return Response({
                     'article': article.slug,
@@ -263,14 +264,14 @@ class RateAPIView(GenericAPIView):
                     'rate_count': count,
                     'your_rating': 'Please login'
                 },
-                                status=status.HTTP_200_OK)
+                    status=status.HTTP_200_OK)
 
         serializer = self.serializer_class(rating)
         return Response({
             'message': 'successfull',
             'data': serializer.data
         },
-                        status=status.HTTP_200_OK)
+            status=status.HTTP_200_OK)
 
     def delete(self, request, slug):
         """
@@ -364,6 +365,21 @@ class CommentVerification(object):
             raise APIException(
                 {"error": "Permission denied! You don't have a profile"})
 
+    def check_like(self, serial_data, profile_id, comment_id):
+        if LikeComment.get_like_status(profile_id, comment_id, 'like') != False:
+            serial_data['like'] = True
+
+        if LikeComment.get_like_status(profile_id, comment_id, 'dislike') != False:
+            serial_data['dislike'] = True
+
+        if 'subcomments' in serial_data:
+            if len(serial_data['subcomments']) > 0:
+                for return_data in serial_data['subcomments']:
+                    return_data = CommentVerification.check_like(
+                        self, return_data, profile_id, return_data['id'])
+
+        return serial_data
+
 
 class CommentsAPIView(APIView):
 
@@ -389,8 +405,12 @@ class CommentsAPIView(APIView):
 
         serializer = self.serializer_class(ArticleComment.objects.filter(
             article=slug, parent_comment=None), many=True)
+        serializer_data = serializer.data
+        for return_data in serializer_data:
+            return_data = CommentVerification.check_like(
+                self, return_data, request.user.profile, return_data['id'])
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer_data, status=status.HTTP_200_OK)
 
 
 class RetrieveCommentsAPIView(APIView):
@@ -400,10 +420,14 @@ class RetrieveCommentsAPIView(APIView):
     serializer_class = CommentSerializer
 
     def get(self, request, **kwargs):
-        serializer = self.serializer_class(
-            CommentVerification.comment_exists(self, kwargs['slug'], kwargs['pk']))
+        get_comment = CommentVerification.comment_exists(
+            self, kwargs['slug'], kwargs['pk'])
+        serializer = self.serializer_class(get_comment)
+        serializer_data = serializer.data
+        return_data = CommentVerification.check_like(
+            self, serializer_data, request.user.profile, get_comment.id)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(return_data, status=status.HTTP_200_OK)
 
     def put(self, request, **kwargs):
         CommentVerification.check_profile(self, request.user.id)
@@ -460,9 +484,47 @@ class SubCommentAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def get(self, request, **kwargs):
-        CommentVerification.comment_exists(self, kwargs['slug'], kwargs['pk'])
+        get_comment = CommentVerification.comment_exists(
+            self, kwargs['slug'], kwargs['pk'])
 
         serializer = self.serializer_class(ArticleComment.objects.filter(
             article=kwargs['slug'], parent_comment=kwargs['pk']), many=True)
+        serializer_data = serializer.data
+        return_data = CommentVerification.check_like(
+            self, serializer_data, request.user.profile, get_comment.id)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(return_data, status=status.HTTP_200_OK)
+
+
+class LikeUnlikeAPIView(APIView):
+
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (CommentJSONRenderer,)
+    serializer_class = CommentSerializer
+
+    def post(self, request, **kwargs):
+        CommentVerification.check_profile(self, request.user.id)
+        like_comment = CommentVerification.comment_exists(
+            self, kwargs['slug'], kwargs['pk'])
+
+        return_message = LikeComment.comment_like_unlike(
+            request.user.profile, like_comment.id)
+
+        return Response(return_message, status=status.HTTP_200_OK)
+
+
+class CommentDislikeAPIView(APIView):
+
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (CommentJSONRenderer,)
+    serializer_class = CommentSerializer
+
+    def post(self, request, **kwargs):
+        CommentVerification.check_profile(self, request.user.id)
+        like_comment = CommentVerification.comment_exists(
+            self, kwargs['slug'], kwargs['pk'])
+
+        return_message = LikeComment.comment_dislike(
+            request.user.profile, like_comment.id)
+
+        return Response(return_message, status=status.HTTP_200_OK)

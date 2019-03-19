@@ -1,3 +1,5 @@
+from .models import Article, ArticleComment
+from ..profiles.serializers import ProfileSerializer
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Avg
 from rest_framework import serializers
@@ -224,7 +226,7 @@ class SubcommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ArticleComment
         fields = ['id', 'article', 'createdAt', 'updatedAt',
-                  'body', 'author', 'is_active', 'subcomments']
+                  'body', 'author', 'like', 'dislike', 'is_active', 'subcomments']
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -237,7 +239,7 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ArticleComment
         fields = ['id', 'article', 'createdAt', 'updatedAt',
-                  'body', 'author', 'is_active', 'subcomments']
+                  'body', 'author', 'like', 'dislike', 'is_active', 'subcomments']
 
 
 class DeleteCommentSerializer(serializers.ModelSerializer):

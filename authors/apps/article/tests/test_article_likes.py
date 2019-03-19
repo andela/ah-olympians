@@ -65,7 +65,6 @@ class TestArticleLikes(APITestCase):
         response = self.client.post('/api/articles/' + self.slug + '/like',
                                     format='json')
         result = json.loads(response.content)
-        print(response.content)
 
         self.assertIn('Successfully liked: {} article'.format(self.slug),
                       str(result))
