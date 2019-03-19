@@ -84,8 +84,13 @@ class ArticleSerializer(serializers.ModelSerializer):
         article = Article(**validated_data)
         article.save()
         tags_to = Article.objects.get(pk=article.pk)
-        for tag in article.tag_list: 
-            tags_to.tag_list.add(tag)
+
+        if article.tag_list is not None:
+            for tag in article.tag_list: 
+                tags_to.tag_list.add(tag)
+
+            return article
+        article.tag_list = []
         return article
     
     def update(self,instance,validated_data):
