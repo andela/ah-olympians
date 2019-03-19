@@ -5,7 +5,7 @@ from rest_framework import serializers
 from rest_framework import response
 
 from authors.apps.authentication.serializers import UserSerializer
-from .models import Article, ArticleLikes, Rate,ArticleComment
+from .models import Article, ArticleLikes, Rate, ArticleComment
 from ..profiles.serializers import ProfileSerializer
 
 
