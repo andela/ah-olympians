@@ -17,20 +17,23 @@ class TestArticle(APITestCase):
             "title": "Andela",
             "description": "sdsd",
             "body": "dsd",
-            "images": ""
+            "images": "",
+            "tag_list":['kelvin','novak']
         }
         self.article0 = {
             "title": "Andela1",
             "description": "sdsd1",
             "body": "dsd1",
-            "images": ""
+            "images": "",
+            "tag_list":['kelvin','onkundi']
         }
         self.article2 = {
             "title": "Andela",
             "description": "sdsd",
             "body": "dsd",
             "images": "",
-            "slug": "andela"
+            "slug": "andela",
+            "tag_list":['kelvin','onkundi']
         }
         self.user = {
             "user": {
@@ -39,6 +42,7 @@ class TestArticle(APITestCase):
                 "password": "test1234"
             }
         }
+
         self.user2 = {
             "user": {
                 "email": "chirch@olympians.com",
@@ -46,11 +50,14 @@ class TestArticle(APITestCase):
                 "password": "test1234"
             }
         }
+
         self.article1 = {
 
             "description": "sdsd",
             "body": "dsd",
-            "images": ""
+            "images": "",
+            "tag_list":['kelvin','novak']
+
         }
         create_user = self.client.post(
             '/api/users/', self.user, format='json')

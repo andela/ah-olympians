@@ -6,6 +6,8 @@ from django.utils.text import slugify
 from rest_framework import status
 from rest_framework.exceptions import APIException
 from rest_framework.response import Response
+from cloudinary.models import CloudinaryField
+from taggit.managers import TaggableManager
 
 from authors.apps.authentication.models import User
 from ..profiles.models import UserProfile
@@ -13,15 +15,18 @@ from ..profiles.models import UserProfile
 
 # Create your models here.
 class Article(models.Model):
+
     title = models.CharField(max_length=225)
     slug = models.SlugField(max_length=255, unique=True, blank=True, null=True)
     description = models.TextField()
     body = models.TextField(blank=False)
+    tag_list = TaggableManager(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     favourited = models.BooleanField(default=False)
     author = models.ForeignKey(
         User, related_name="articles", on_delete=models.CASCADE)
+
 
     def __str__(self):
         return self.title
@@ -58,6 +63,7 @@ class ArticleImage(models.Model):
 
     class Meta:
         ordering = ('created',)
+
 
 
 class Rate(models.Model):
@@ -160,3 +166,4 @@ class ArticleComment(models.Model):
 
     def __str__(self):
         return self.body[:20]
+

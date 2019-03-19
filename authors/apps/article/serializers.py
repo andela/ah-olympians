@@ -2,8 +2,11 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Avg
 from rest_framework import serializers
 
+from rest_framework import response
+
 from authors.apps.authentication.serializers import UserSerializer
-from .models import Article, ArticleLikes, Rate
+from .models import Article, ArticleLikes, Rate, ArticleComment
+from ..profiles.serializers import ProfileSerializer
 
 
 class LikesSerializer(serializers.ModelSerializer):
@@ -16,21 +19,36 @@ class LikesSerializer(serializers.ModelSerializer):
         model = ArticleLikes
         fields = ('user',)
 
-from .models import Article, ArticleComment
 
-from authors.apps.authentication.serializers import UserSerializer
-from ..profiles.serializers import ProfileSerializer
-
+class TagSerializer(serializers.Field):
+    """
+    tag serializer class
+    """
+    def to_internal_value(self, data):
+       
+        tag_data = ArticleSerializer().validate_tag_list(data)
+        return tag_data
+    
+    def to_representation(self,obj):
+        """
+        converts taggable manager instance to a list
+        """
+        if type(obj) is not list:
+            return [tag for tag in obj.all()]
+        return obj
+     
 
 class ArticleSerializer(serializers.ModelSerializer):
     """
     converts the model into JSON format
     """
+
     author = UserSerializer(read_only=True)
     likes = serializers.SerializerMethodField()
     dislikes = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
     dislikes_count = serializers.SerializerMethodField()
+    tag_list = TagSerializer(default=[],required=False)
 
     def get_rates(self, obj):
         """
@@ -45,12 +63,62 @@ class ArticleSerializer(serializers.ModelSerializer):
 
         return average['your_rating__avg']
 
+
+    def validate_tag_list(self, validated_data):
+        if type(validated_data) is not list:
+            raise serializers.ValidationError(
+                {"message":"error"}
+            )
+        
+        for tag in validated_data:
+            if not isinstance(tag,str):
+                raise serializers.ValidationError(
+                    {"message":"error"}
+                )
+            return validated_data
+    
+    def create(self,validated_data,*args):
+        """
+        post saves tags after the article has been saved
+        """
+        article = Article(**validated_data)
+        article.save()
+        tags_to = Article.objects.get(pk=article.pk)
+
+        if article.tag_list is not None:
+            for tag in article.tag_list: 
+                tags_to.tag_list.add(tag)
+
+            return article
+        article.tag_list = []
+        return article
+    
+    def update(self,instance,validated_data):
+        """
+        update the tag_list field
+        """
+        if 'tag_list' not in validated_data:
+            return instance
+        
+        tag_list = validated_data.pop('tag_list',None)
+
+        validated_data.pop('slug',None)
+
+        for (key,value) in validated_data.items():
+            setattr(instance,key,value)
+
+        instance.tag_list.set(*tag_list,clear=True)
+        instance.save()
+
+        instance.tag_list = tag_list
+        return instance
+
     class Meta:
         model = Article
-
         fields = [
             'title',
             'description',
+            'tag_list',
             'body',
             'created_at',
             'updated_at',
@@ -96,7 +164,6 @@ class ArticleSerializer(serializers.ModelSerializer):
         :return: count of users who disliked an article
         """
         return obj.liked.filter(dislikes=-1).count()
-
 
 class RateSerializer(serializers.ModelSerializer):
     """
@@ -180,3 +247,14 @@ class DeleteCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ArticleComment
         fields = ['is_active']
+
+class GetArticleSerializer(serializers.ModelSerializer):
+    tag_list = serializers.SerializerMethodField()
+    
+    def get_tag_list(self,article):
+        return list(article.tag_list.names())
+
+    class Meta:
+        model = Article
+        fields = '__all__'
+
