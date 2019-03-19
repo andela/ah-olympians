@@ -48,7 +48,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     dislikes = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
     dislikes_count = serializers.SerializerMethodField()
-    tag_list = TagSerializer(default=[])
+    tag_list = TagSerializer(default=[],required=False)
 
     def get_rates(self, obj):
         """
@@ -258,12 +258,3 @@ class GetArticleSerializer(serializers.ModelSerializer):
         model = Article
         fields = '__all__'
 
-class GetArticleLikesSerializer(serializers.ModelSerializer):
-    tag_list = serializers.SerializerMethodField()
-    
-    def get_tag_list(self,article):
-        return list(article.tag_list.names())
-
-    class Meta:
-        model = ArticleLikes
-        fields = '__all__'
