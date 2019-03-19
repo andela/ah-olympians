@@ -252,3 +252,13 @@ class GetArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = '__all__'
+
+class GetArticleLikesSerializer(serializers.ModelSerializer):
+    tag_list = serializers.SerializerMethodField()
+    
+    def get_tag_list(self,article):
+        return list(article.tag_list.names())
+
+    class Meta:
+        model = ArticleLikes
+        fields = '__all__'

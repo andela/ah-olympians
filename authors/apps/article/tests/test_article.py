@@ -18,7 +18,7 @@ class TestArticle(APITestCase):
             "description": "sdsd",
             "body": "dsd",
             "images": "",
-            "tag_list":['kelvin']
+            "tag_list":['kelvin','novak']
         }
         self.article0 = {
             "title": "Andela1",
@@ -56,7 +56,7 @@ class TestArticle(APITestCase):
             "description": "sdsd",
             "body": "dsd",
             "images": "",
-            "tag_list":['kelvin']
+            "tag_list":['kelvin','novak']
 
         }
         create_user = self.client.post(

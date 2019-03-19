@@ -31,7 +31,8 @@ class UserTest(APITestCase):
             "title": "Andela",
             "description": "sdsd",
             "body": "dsd",
-            "images": ""
+            "images": "",
+            "tag_list":['kelvin','onkundi']
         }
 
         self.comment = {
