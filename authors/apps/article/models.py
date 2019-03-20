@@ -15,7 +15,6 @@ from ..profiles.models import UserProfile
 
 # Create your models here.
 class Article(models.Model):
-
     title = models.CharField(max_length=225)
     slug = models.SlugField(max_length=255, unique=True, blank=True, null=True)
     description = models.TextField()
@@ -23,10 +22,8 @@ class Article(models.Model):
     tag_list = TaggableManager(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    favourited = models.BooleanField(default=False)
     author = models.ForeignKey(
         User, related_name="articles", on_delete=models.CASCADE)
-
 
     def __str__(self):
         return self.title
@@ -63,7 +60,6 @@ class ArticleImage(models.Model):
 
     class Meta:
         ordering = ('created',)
-
 
 
 class Rate(models.Model):
@@ -156,7 +152,7 @@ class ArticleComment(models.Model):
     article = models.ForeignKey(
         Article, related_name="comments", on_delete=models.CASCADE, to_field="slug")
     parent_comment = models.ForeignKey(
-        'self', related_name='subcomments',  on_delete=models.CASCADE, blank=True, null=True)
+        'self', related_name='subcomments', on_delete=models.CASCADE, blank=True, null=True)
     body = models.TextField(blank=False)
     author = models.ForeignKey(
         UserProfile, related_name="comments", on_delete=models.CASCADE)
@@ -228,3 +224,19 @@ class LikeComment(models.Model):
                 "message": "comment dislike removed successfully"}
 
         return return_message
+
+
+class ArticleFavourite(models.Model):
+    """This class creates an article favourited"""
+    user = models.ForeignKey(
+        User,
+        related_name="favouriters",
+        on_delete=models.CASCADE)
+
+    article = models.ForeignKey(
+        Article,
+        related_name='favourited_articles',
+        on_delete=models.CASCADE
+    )
+    favourited = models.BooleanField(default=False)
+

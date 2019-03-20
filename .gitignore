@@ -99,4 +99,4 @@ db.sqlite3
 .ds_store
 
 #migration
-**/migrations/*
+migrations/

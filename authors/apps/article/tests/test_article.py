@@ -18,14 +18,14 @@ class TestArticle(APITestCase):
             "description": "sdsd",
             "body": "dsd",
             "images": "",
-            "tag_list":['kelvin','novak']
+            "tag_list": ['kelvin', 'novak']
         }
         self.article0 = {
             "title": "Andela1",
             "description": "sdsd1",
             "body": "dsd1",
             "images": "",
-            "tag_list":['kelvin','onkundi']
+            "tag_list": ['kelvin', 'onkundi']
         }
         self.article2 = {
             "title": "Andela",
@@ -33,7 +33,7 @@ class TestArticle(APITestCase):
             "body": "dsd",
             "images": "",
             "slug": "andela",
-            "tag_list":['kelvin','onkundi']
+            "tag_list": ['kelvin', 'onkundi']
         }
         self.user = {
             "user": {
@@ -56,7 +56,7 @@ class TestArticle(APITestCase):
             "description": "sdsd",
             "body": "dsd",
             "images": "",
-            "tag_list":['kelvin','novak']
+            "tag_list": ['kelvin', 'novak']
 
         }
         create_user = self.client.post(
@@ -161,15 +161,11 @@ class TestArticle(APITestCase):
         """
         test view all articles
         """
-        self.client.post('/api/articles/', self.article,
-                         HTTP_AUTHORIZATION='Token ' + self.token,
-                         format='json')
-        response = self.client.get(
-            '/api/articles/',
-            HTTP_AUTHORIZATION='Token ' + self.token,
-            format='json')
+        response = self.client.get('/api/articles/',
+                                   HTTP_AUTHORIZATION='Token ' + self.token,
+                                   format='json')
         result = json.loads(response.content)
-        self.assertEqual(1, len(result["articles"]))
+        self.assertEqual(0, len(result["articles"]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_view_one_article(self):
@@ -209,26 +205,26 @@ class TestArticle(APITestCase):
         self.assertEqual(response_article.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_delete_article(self):
-       """
-       test the delete method
-       :return:
-       """
-       token_request = json.loads(self.request_tkn.content)
-       token = token_request["user"]["token"]
-       response = self.client.post('/api/articles/', self.article,
-                                   HTTP_AUTHORIZATION='Token ' + self.token,
-                                   format='json')
-       result = json.loads(response.content)
-       slug = result["article"]["slug"]
+        """
+        test the delete method
+        :return:
+        """
+        token_request = json.loads(self.request_tkn.content)
+        token = token_request["user"]["token"]
+        response = self.client.post('/api/articles/', self.article,
+                                    HTTP_AUTHORIZATION='Token ' + self.token,
+                                    format='json')
+        result = json.loads(response.content)
+        slug = result["article"]["slug"]
 
-       response_article = self.client.delete('/api/articles/andela',
-                                             HTTP_AUTHORIZATION='Token ' + self.token,
-                                             format='json')
-       article = json.loads(response_article.content)
+        response_article = self.client.delete('/api/articles/andela',
+                                              HTTP_AUTHORIZATION='Token ' + self.token,
+                                              format='json')
+        article = json.loads(response_article.content)
 
-       self.assertIn(
-           'article deleted', str(article))
-       self.assertEqual(response_article.status_code, status.HTTP_202_ACCEPTED)
+        self.assertIn(
+            'article deleted', str(article))
+        self.assertEqual(response_article.status_code, status.HTTP_202_ACCEPTED)
 
     def test_delete_unexistting_article(self):
         """
