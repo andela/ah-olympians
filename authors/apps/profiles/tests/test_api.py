@@ -8,7 +8,7 @@ from ..models import UserProfile
 # tests for Endpoints
 
 
-class UserTest(APITestCase):
+class ProfileTest(APITestCase):
     client = APIClient()
 
     def setUp(self):

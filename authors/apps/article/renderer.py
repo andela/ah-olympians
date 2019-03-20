@@ -20,17 +20,16 @@ class ArticleJSONRenderer(JSONRenderer):
             "article": 'No article found.'
         })
 
+
 class CommentJSONRenderer(JSONRenderer):
     charset = 'utf-8'
 
     def render(self, data, media_type=None, renderer_context=None):
-        
         if isinstance(data, dict):
             errors = data.get('errors', None)
             is_active = data.get('is_active', None)
 
             if errors is not None:
-                
                 return super(CommentJSONRenderer, self).render(data)
 
             if is_active is not None:
@@ -44,12 +43,14 @@ class CommentJSONRenderer(JSONRenderer):
             comment = self.filter_data(comment)
 
         return json.dumps({
-                'comments': data,
-                'commentsCount': len(data)
-            })
+            'comments': data,
+            'commentsCount': len(data)
+        })
 
     def filter_data(self, data):
         if data['is_active'] == False:
+            del data['like']
+            del data['dislike']
             del data['is_active']
             del data['article']
             del data['author']
@@ -62,15 +63,14 @@ class CommentJSONRenderer(JSONRenderer):
             del data['is_active']
             del data['article']
             data['author'] = {
-                        "username": data['author']['username'],
-                        "bio": data['author']['bio'],
-                        "image": data['author']['avatar'],
-                        "following": data['author']['following']
-                    }
+                "username": data['author']['username'],
+                "bio": data['author']['bio'],
+                "image": data['author']['avatar'],
+                "following": data['author']['following']
+            }
 
         if len(data['subcomments']) > 0:
             for comment in data['subcomments']:
                 comment = self.filter_data(comment)
 
         return data
-
