@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'rest_framework_social_oauth2',
     'cloudinary',
     'taggit',
+    'drf_yasg',
+    'rest_framework_swagger',
 
     'authors.apps.authentication',
     'authors.apps.core',

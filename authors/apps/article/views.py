@@ -1,8 +1,6 @@
 from django.db.utils import IntegrityError
-from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView
@@ -10,12 +8,10 @@ from rest_framework import serializers, status
 from django.db.models import Avg
 
 
-from .serializers import ArticleSerializer, RateSerializer
-from .serializers import ArticleSerializer, CommentSerializer, DeleteCommentSerializer, RateSerializer, \
-    GetArticleSerializer
 from ..profiles.models import UserProfile
 from .models import Article, ArticleImage, ArticleLikes, Rate, ArticleFavourite, ArticleComment, LikeComment
 from .renderer import ArticleJSONRenderer, CommentJSONRenderer
+from .serializers import ArticleSerializer, CommentSerializer, DeleteCommentSerializer, RateSerializer
 
 
 class ArticlesAPIView(APIView):
@@ -59,7 +55,6 @@ class ArticlesAPIView(APIView):
         article = Article.objects.all()
         serializer = ArticleSerializer(article, many=True, context={'request': self.request})
         return Response(serializer.data)
-
 
     def destroy(self, request, slug):
         """
@@ -372,7 +367,6 @@ class CommentVerification(object):
     def check_like(self, serial_data, profile_id, comment_id):
         if LikeComment.get_like_status(profile_id, comment_id, 'like') != False:
             serial_data['like'] = True
-
         if LikeComment.get_like_status(profile_id, comment_id, 'dislike') != False:
             serial_data['dislike'] = True
 
@@ -383,7 +377,6 @@ class CommentVerification(object):
                         self, return_data, profile_id, return_data['id'])
 
         return serial_data
-
 
 class CommentsAPIView(APIView):
     permission_classes = (IsAuthenticated,)
