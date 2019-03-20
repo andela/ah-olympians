@@ -7,9 +7,8 @@ from rest_framework import serializers
 from rest_framework import response
 
 from authors.apps.authentication.serializers import UserSerializer
-from .models import Article, ArticleLikes, Rate, ArticleComment, ArticleFavourite
+from .models import Article, ArticleLikes, Rate, ArticleComment, ArticleFavourite,ReportArticle
 from ..profiles.serializers import ProfileSerializer
-
 
 class LikesSerializer(serializers.ModelSerializer):
     """
@@ -283,7 +282,6 @@ class DeleteCommentSerializer(serializers.ModelSerializer):
         model = ArticleComment
         fields = ['is_active']
 
-
 class GetArticleSerializer(serializers.ModelSerializer):
     tag_list = serializers.SerializerMethodField()
 
@@ -293,3 +291,21 @@ class GetArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = '__all__'
+
+class ReportSerializer(serializers.ModelSerializer):
+    """
+        Report model serializers
+    """
+    def get_article(self, obj):
+        """
+        Gets article slug
+        """
+        return obj.article.slug
+
+    class Meta:
+        model = ReportArticle
+        fields = ['article','report_message','reader']
+
+    class Meta:
+        model = ReportArticle
+        fields = ['article','report_message','reader']

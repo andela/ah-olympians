@@ -1,7 +1,9 @@
 from django.urls import path
 
+
 from .views import (ArticlesAPIView, RetrieveArticleAPIView, LikeAPIView, DislikeAPIView, RateAPIView, FavouriteAPIView,
-                    CommentsAPIView, RetrieveCommentsAPIView, SubCommentAPIView,LikeUnlikeAPIView, CommentDislikeAPIView)
+                    CommentsAPIView, RetrieveCommentsAPIView, SubCommentAPIView,LikeUnlikeAPIView, CommentDislikeAPIView,ReportArticlesView,GetSingleReportView,GetAllReportsViews)
+
 
 app_name = "articles"
 
@@ -17,4 +19,7 @@ urlpatterns = [
     path('articles/<slug>/like_comment/<pk>', LikeUnlikeAPIView.as_view()),
     path('articles/<slug>/dislike_comment/<pk>', CommentDislikeAPIView.as_view()),
     path('articles/<slug>/favorite', FavouriteAPIView.as_view()),
+    path('report/<slug>/',ReportArticlesView.as_view()),
+    path('reports/<slug>/',GetSingleReportView.as_view()),
+    path('reports/',GetAllReportsViews.as_view()),
 ]
