@@ -178,7 +178,7 @@ class LikeComment(models.Model):
     created = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ('created',)
+        ordering = ('like_type',)
 
     @staticmethod
     def get_like_status(user_id, comment_id, like_type):
@@ -240,3 +240,43 @@ class ArticleFavourite(models.Model):
     )
     favourited = models.BooleanField(default=False)
 
+
+class ArticleBookmark(models.Model):
+    """Articles bookmark Model"""
+    user = models.ForeignKey(
+        User, related_name="bookmarks", on_delete=models.CASCADE)
+    article = models.ForeignKey(
+        Article, related_name='bookmarks', on_delete=models.CASCADE, to_field="slug")
+    created = models.DateTimeField(auto_now=True)
+
+    @staticmethod
+    def get_bookmark(user_id, slug):
+        try:
+            bookmark = ArticleBookmark.objects.get(user=user_id, article=slug)
+            return bookmark
+        except ArticleBookmark.DoesNotExist:
+            pass
+
+        return False
+
+    @staticmethod
+    def create_bookmark(user_id, slug):
+        return_message = {"error": "Bookmark already exists"}
+
+        if not ArticleBookmark.get_bookmark(user_id, slug):
+            ArticleBookmark.objects.create(user=user_id, article=slug)
+            return_message = {"message": "Bookmark created"}
+
+        return return_message
+
+    @staticmethod
+    def remove_bookmark(user_id, slug):
+        bookmark_exist = ArticleBookmark.get_bookmark(user_id, slug)
+        return_message = {"message": "Bookmark removed"}
+
+        if not bookmark_exist:
+            return_message = {"error": "Bookmark does not exist"}
+        else:
+            bookmark_exist.delete()
+
+        return return_message
