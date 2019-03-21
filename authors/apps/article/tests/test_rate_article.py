@@ -35,6 +35,15 @@ class TestRateArticle(APITestCase):
             }
         }
 
+        self.profile = {
+            "bio": "am fantastic",
+            "interests": "football",
+            "favorite_quote": "Yes we can",
+            "mailing_address": "P.O BOX 1080",
+            "website": "http://www.web.com",
+            "active_profile": True
+        }
+
         self.rate = {
             "your_rating": 2
         }
@@ -65,9 +74,12 @@ class TestRateArticle(APITestCase):
         token_request_1 = json.loads(self.request_tkn_1.content)
         self.token_1 = token_request_1["user"]["token"]
 
+        self.client.post('/api/profile/create_profile/', self.profile, 
+            HTTP_AUTHORIZATION='Token ' + self.token, format='json')
+
+
         create_article = self.client.post('/api/articles/', self.article,
-                                          HTTP_AUTHORIZATION='Token ' + self.token,
-                                          format='json')
+            HTTP_AUTHORIZATION='Token ' + self.token, format='json')
 
     def test_successful_rate(self):
         """Test rate article 

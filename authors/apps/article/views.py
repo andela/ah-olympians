@@ -1,6 +1,11 @@
 from django.db.models import Avg
 from django.db.utils import IntegrityError
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+from django.utils.html import strip_tags
 from django_social_share.templatetags import social_share
+
+
 from rest_framework import status
 from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.generics import GenericAPIView, ListCreateAPIView, RetrieveAPIView
@@ -8,16 +13,21 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from authors.apps.authentication.utils import send_email
-from .models import (Article, ArticleImage, ArticleLikes, Rate,
-                     ArticleFavourite, ArticleComment, LikeComment,
-                     ArticleBookmark, ReportArticle)
+from ..authentication.models import User
+from ..authentication.utils import send_email
+from .models import(
+    Article, ArticleImage, ArticleLikes, Rate,
+    ArticleFavourite, ArticleComment, LikeComment, ArticleBookmark,
+    ReportArticle
+    )
+from ..profiles.models import UserProfile, NotifyMe
+from ..profiles.serializers import NotificationSerializer
 from .renderer import ArticleJSONRenderer, CommentJSONRenderer
-from .serializers import (ArticleSerializer, CommentSerializer,
-                          DeleteCommentSerializer, RateSerializer,
-                          ReportSerializer, BookmarksSerializer)
+from .serializers import(
+    ArticleSerializer, CommentSerializer, DeleteCommentSerializer,
+    RateSerializer, BookmarksSerializer, ReportSerializer
+    )
 from .utils import email_message
-from ..profiles.models import UserProfile
 
 
 class ArticlesAPIView(APIView):
@@ -37,6 +47,8 @@ class ArticlesAPIView(APIView):
         article = request.data
         article_data = dict(article)
 
+        CommentVerification().check_profile(self.request.user.id)
+
         serializer = self.serializer_class(data=article, context=context)
         try:
             user = request.user
@@ -49,6 +61,30 @@ class ArticlesAPIView(APIView):
                         article=article,
                         image=image,
                         description="image for article")
+
+
+            # Start of notification sending
+            queryset = user.profile.following.all()
+            queryset = queryset.filter(email_notify=True)
+            serializer2 = NotificationSerializer(queryset, many=True)
+
+            my_list = list()
+            for i in range(len(serializer2.data)):
+                my_list.append(serializer2.data[i]["username"])
+
+            author_name = serializer.data["author"]["username"]
+            article_title = serializer.data["title"]
+            subject = "A new article from {}".format(author_name)
+            send_email(
+                my_list, subject,
+                "A user you follow posted a new article. You can read it \
+                via this URL https://aholympian.herokuapp.com/api/articles/{}".format(serializer.data["slug"]))
+
+            NotifyMe.objects.create(
+                username=user,
+                notification="A new article from {}".format(author_name),
+                title="New Article")
+            # End of notification sending
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except IntegrityError as e:
@@ -347,6 +383,14 @@ class CommentVerification(object):
 
         return article
 
+    def get_article_id(self, slug):
+        article = Article.objects.get(slug=slug).id
+        return article
+
+    def get_article_title(self, slug):
+        article = Article.objects.get(slug=slug).title
+        return article
+
     def comment_exists(self, slug, pk):
         try:
             expected_comment = ArticleComment.objects.get(
@@ -398,6 +442,8 @@ class CommentsAPIView(APIView):
     def post(self, request, slug):
         CommentVerification.check_profile(self, request.user.id)
         CommentVerification.article_exists(self, slug)
+        article_id = CommentVerification.get_article_id(self, slug)
+        article_title = CommentVerification.get_article_title(self, slug)
         new_comment = request.data.get('comment', {})
 
         new_comment["article"] = slug
@@ -406,6 +452,16 @@ class CommentsAPIView(APIView):
             data=new_comment, context={'request': self.request})
         serializer.is_valid(raise_exception=True)
         serializer.save(author=request.user.profile)
+
+
+        # Start of notification sending
+        comment_author = request.user.profile.username.username
+        NotifyMe.objects.create(
+            article_id=article_id,
+            notification="A new comment from {} on the article ({}) \
+            that you favorited".format(comment_author, article_title),
+            title="New Comment")
+        #End of notification sending
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
