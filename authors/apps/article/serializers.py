@@ -1,9 +1,7 @@
-from .models import Article, ArticleComment
-from ..profiles.serializers import ProfileSerializer
+import readtime
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Avg
 from rest_framework import serializers
-
 from rest_framework import response
 
 from authors.apps.authentication.serializers import UserSerializer
@@ -51,6 +49,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     likes_count = serializers.SerializerMethodField()
     dislikes_count = serializers.SerializerMethodField()
     tag_list = TagSerializer(default=[], required=False)
+    read_time = serializers.SerializerMethodField()
 
     def get_rates(self, obj):
         """
@@ -128,6 +127,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             'updated_at',
             'slug',
             'favourited',
+            'read_time',
             'author',
             'likes_count',
             'dislikes_count',
@@ -197,6 +197,17 @@ class ArticleSerializer(serializers.ModelSerializer):
             return True
         except ArticleFavourite.DoesNotExist:
             return False
+
+    def get_read_time(self, obj):
+        """
+        this method calculates the readtime of an article
+        :param obj: this is the article instance
+        :return: the time taken in minutes
+        """
+        body = obj.body
+        result = readtime.of_text(body)
+        read_time = result.minutes
+        return str(read_time) + " minute(s)"
 
 
 class RateSerializer(serializers.ModelSerializer):
