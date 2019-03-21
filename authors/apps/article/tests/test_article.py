@@ -202,7 +202,8 @@ class TestArticle(APITestCase):
         article = json.loads(response_article.content)
 
         self.assertIn('The article requested does not exist', str(article))
-        self.assertEqual(response_article.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response_article.status_code,
+                         status.HTTP_404_NOT_FOUND)
 
     def test_delete_article(self):
         """
@@ -224,7 +225,8 @@ class TestArticle(APITestCase):
 
         self.assertIn(
             'article deleted', str(article))
-        self.assertEqual(response_article.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(response_article.status_code,
+                         status.HTTP_202_ACCEPTED)
 
     def test_delete_unexistting_article(self):
         """
@@ -239,7 +241,8 @@ class TestArticle(APITestCase):
         self.assertIn(
             'Sorry, the article was not found', str(article))
 
-        self.assertEqual(response_article.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(response_article.status_code,
+                         status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def test_edit_article(self):
         """
