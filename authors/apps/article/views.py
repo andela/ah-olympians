@@ -1,39 +1,30 @@
-import json
-
+from django.db.models import Avg
 from django.db.utils import IntegrityError
-from django.shortcuts import get_object_or_404
-from django.urls import reverse
 from django_social_share.templatetags import social_share
-
+from rest_framework import status
+from rest_framework.exceptions import APIException, NotFound, ValidationError
+from rest_framework.generics import GenericAPIView, ListCreateAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.views import APIView
-from rest_framework import serializers, status
-from django.db.models import Avg
 
-
-from .serializers import ArticleSerializer, CommentSerializer, DeleteCommentSerializer, RateSerializer, BookmarksSerializer
-from ..profiles.models import UserProfile
-from .models import Article, ArticleImage, ArticleLikes, Rate, ArticleFavourite, ArticleComment, LikeComment, ArticleBookmark, ReportArticle
-from rest_framework.generics import GenericAPIView, ListCreateAPIView, RetrieveAPIView
-from rest_framework.exceptions import NotFound, ValidationError
-from rest_framework import serializers, status
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-from django.core.mail import EmailMultiAlternatives
-from ..profiles.models import UserProfile
-from .serializers import ArticleSerializer, CommentSerializer, DeleteCommentSerializer, RateSerializer, ReportSerializer
-from .renderer import ArticleJSONRenderer, CommentJSONRenderer
 from authors.apps.authentication.utils import send_email
+from .models import (Article, ArticleImage, ArticleLikes, Rate,
+                     ArticleFavourite, ArticleComment, LikeComment,
+                     ArticleBookmark, ReportArticle)
+from .renderer import ArticleJSONRenderer, CommentJSONRenderer
+from .serializers import (ArticleSerializer, CommentSerializer,
+                          DeleteCommentSerializer, RateSerializer,
+                          ReportSerializer, BookmarksSerializer)
 from .utils import email_message
+from ..profiles.models import UserProfile
 
 
 class ArticlesAPIView(APIView):
     queryset = Article.objects.all()
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, )
     serializer_class = ArticleSerializer
-    renderer_classes = (ArticleJSONRenderer,)
+    renderer_classes = (ArticleJSONRenderer, )
     lookup_field = 'slug'
 
     def post(self, request):
@@ -70,8 +61,8 @@ class ArticlesAPIView(APIView):
         articles = Article.objects.all()
         for article in articles:
             article.tag_list = list(article.tag_list.names())
-        serializer = ArticleSerializer(articles, many=True, context={
-                                       'request': self.request})
+        serializer = ArticleSerializer(
+            articles, many=True, context={'request': self.request})
         return Response(serializer.data)
 
     def destroy(self, request, slug):
@@ -105,7 +96,8 @@ class ArticlesAPIView(APIView):
         try:
             article = self.queryset.get(slug=slug)
         except Article.DoesNotExist:
-            return Response({"error": "the article was not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "the article was not found"},
+                            status=status.HTTP_404_NOT_FOUND)
         serializer = ArticleSerializer(article, data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -131,8 +123,8 @@ class RetrieveArticleAPIView(APIView):
         try:
             article = Article.objects.get(slug=slug)
             article.tag_list = list(article.tag_list.names())
-            serializer = ArticleSerializer(article, many=False, context={
-                                           'request': self.request})
+            serializer = ArticleSerializer(
+                article, many=False, context={'request': self.request})
             return Response({'article': serializer.data},
                             status=status.HTTP_200_OK)
         except Article.DoesNotExist:
@@ -151,8 +143,8 @@ class RetrieveArticleAPIView(APIView):
         except Article.DoesNotExist:
             return Response({"error": "the article was not found"},
                             status=status.HTTP_404_NOT_FOUND)
-        serializer = ArticleSerializer(article, data=request.data, context={
-                                       'request': self.request})
+        serializer = ArticleSerializer(
+            article, data=request.data, context={'request': self.request})
         serializer.is_valid(raise_exception=True)
 
         if article.author.id == request.user.id:
@@ -180,7 +172,7 @@ class RetrieveArticleAPIView(APIView):
 class RateAPIView(GenericAPIView):
     queryset = Rate.objects.all()
     serializer_class = RateSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly, )
 
     def get_article(self, slug):
         """
@@ -233,7 +225,7 @@ class RateAPIView(GenericAPIView):
             'message': 'rate_success',
             'data': serializer.data
         },
-            status=status.HTTP_201_CREATED)
+                        status=status.HTTP_201_CREATED)
 
     def get(self, request, slug):
         """
@@ -247,7 +239,7 @@ class RateAPIView(GenericAPIView):
             raise ValidationError(
                 detail={
                     'message':
-                        'No ratings for this article because the article does not exist'
+                    'No ratings for this article because the article does not exist'
                 })
 
         if request.user.is_authenticated:
@@ -273,7 +265,7 @@ class RateAPIView(GenericAPIView):
                     'rate_count': count,
                     'your_rating': 'rating_not_found'
                 },
-                    status=status.HTTP_200_OK)
+                                status=status.HTTP_200_OK)
             else:
                 return Response({
                     'article': article.slug,
@@ -281,14 +273,14 @@ class RateAPIView(GenericAPIView):
                     'rate_count': count,
                     'your_rating': 'Please login'
                 },
-                    status=status.HTTP_200_OK)
+                                status=status.HTTP_200_OK)
 
         serializer = self.serializer_class(rating)
         return Response({
             'message': 'successfull',
             'data': serializer.data
         },
-            status=status.HTTP_200_OK)
+                        status=status.HTTP_200_OK)
 
     def delete(self, request, slug):
         """
@@ -315,7 +307,7 @@ class LikeAPIView(APIView):
     """ This class proviedes a view class to like and unlike an Article
     :return: http Response mesage
     """
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, )
 
     def post(self, request, slug):
         """This method provides a POST view to like an article.
@@ -332,7 +324,7 @@ class DislikeAPIView(APIView):
     """ This class proviedes a view class to like and unlike an Article
     :return: http Response mesage
     """
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, )
 
     def post(self, request, slug):
         """This method provides a POST view to dislike an article.
@@ -346,7 +338,6 @@ class DislikeAPIView(APIView):
 
 
 class CommentVerification(object):
-
     def article_exists(self, slug):
         try:
             article = Article.objects.get(slug=slug)
@@ -383,9 +374,11 @@ class CommentVerification(object):
                 {"error": "Permission denied! You don't have a profile"})
 
     def check_like(self, serial_data, profile_id, comment_id):
-        if LikeComment.get_like_status(profile_id, comment_id, 'like') != False:
+        if LikeComment.get_like_status(profile_id, comment_id,
+                                       'like') != False:
             serial_data['like'] = True
-        if LikeComment.get_like_status(profile_id, comment_id, 'dislike') != False:
+        if LikeComment.get_like_status(profile_id, comment_id,
+                                       'dislike') != False:
             serial_data['dislike'] = True
 
         if 'subcomments' in serial_data:
@@ -396,9 +389,10 @@ class CommentVerification(object):
 
         return serial_data
 
+
 class CommentsAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-    renderer_classes = (CommentJSONRenderer,)
+    permission_classes = (IsAuthenticated, )
+    renderer_classes = (CommentJSONRenderer, )
     serializer_class = CommentSerializer
 
     def post(self, request, slug):
@@ -418,15 +412,17 @@ class CommentsAPIView(APIView):
     def get(self, request, slug):
         CommentVerification.article_exists(self, slug)
 
-        serializer = self.serializer_class(ArticleComment.objects.filter(
-            article=slug, parent_comment=None), many=True, context={'request': self.request})
+        serializer = self.serializer_class(
+            ArticleComment.objects.filter(article=slug, parent_comment=None),
+            many=True,
+            context={'request': self.request})
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class RetrieveCommentsAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-    renderer_classes = (CommentJSONRenderer,)
+    permission_classes = (IsAuthenticated, )
+    renderer_classes = (CommentJSONRenderer, )
     serializer_class = CommentSerializer
 
     def get(self, request, **kwargs):
@@ -442,12 +438,15 @@ class RetrieveCommentsAPIView(APIView):
         update_comment = CommentVerification.comment_exists(
             self, kwargs['slug'], kwargs['pk'])
 
-        CommentVerification.check_permision(
-            self, update_comment.author, request.user.profile)
+        CommentVerification.check_permision(self, update_comment.author,
+                                            request.user.profile)
 
         updated_data = request.data.get('comment', {})
         serializer = CommentSerializer(
-            update_comment, data=updated_data, partial=True, context={'request': self.request})
+            update_comment,
+            data=updated_data,
+            partial=True,
+            context={'request': self.request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
@@ -458,20 +457,21 @@ class RetrieveCommentsAPIView(APIView):
         delete_comment = CommentVerification.comment_exists(
             self, kwargs['slug'], kwargs['pk'])
 
-        CommentVerification.check_permision(
-            self, delete_comment.author, request.user.profile)
+        CommentVerification.check_permision(self, delete_comment.author,
+                                            request.user.profile)
 
         serializer = DeleteCommentSerializer(
             delete_comment, data={"is_active": False})
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response({"message": "comment deleted successfully"}, status=status.HTTP_202_ACCEPTED)
+        return Response({"message": "comment deleted successfully"},
+                        status=status.HTTP_202_ACCEPTED)
 
 
 class SubCommentAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-    renderer_classes = (CommentJSONRenderer,)
+    permission_classes = (IsAuthenticated, )
+    renderer_classes = (CommentJSONRenderer, )
     serializer_class = CommentSerializer
 
     def post(self, request, **kwargs):
@@ -486,23 +486,26 @@ class SubCommentAPIView(APIView):
         serializer = self.serializer_class(
             data=new_comment, context={'request': self.request})
         serializer.is_valid(raise_exception=True)
-        serializer.save(author=request.user.profile,
-                        parent_comment=parent_article)
+        serializer.save(
+            author=request.user.profile, parent_comment=parent_article)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def get(self, request, **kwargs):
         CommentVerification.comment_exists(self, kwargs['slug'], kwargs['pk'])
 
-        serializer = self.serializer_class(ArticleComment.objects.filter(
-            article=kwargs['slug'], parent_comment=kwargs['pk']), many=True, context={'request': self.request})
+        serializer = self.serializer_class(
+            ArticleComment.objects.filter(
+                article=kwargs['slug'], parent_comment=kwargs['pk']),
+            many=True,
+            context={'request': self.request})
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class LikeUnlikeAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-    renderer_classes = (CommentJSONRenderer,)
+    permission_classes = (IsAuthenticated, )
+    renderer_classes = (CommentJSONRenderer, )
 
     def post(self, request, **kwargs):
         CommentVerification.check_profile(self, request.user.id)
@@ -516,16 +519,16 @@ class LikeUnlikeAPIView(APIView):
 
 
 class CommentDislikeAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-    renderer_classes = (CommentJSONRenderer,)
+    permission_classes = (IsAuthenticated, )
+    renderer_classes = (CommentJSONRenderer, )
 
     def post(self, request, **kwargs):
         CommentVerification.check_profile(self, request.user.id)
         like_comment = CommentVerification.comment_exists(
             self, kwargs['slug'], kwargs['pk'])
 
-        return_message = LikeComment.comment_dislike(
-            request.user.profile, like_comment.id)
+        return_message = LikeComment.comment_dislike(request.user.profile,
+                                                     like_comment.id)
 
         return Response(return_message, status=status.HTTP_200_OK)
 
@@ -534,7 +537,7 @@ class FavouriteAPIView(APIView):
     """
     This class favourites an article
     """
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, )
 
     def post(self, request, slug):
         """
@@ -547,13 +550,17 @@ class FavouriteAPIView(APIView):
             article = Article.objects.get(slug=slug)
         except Article.DoesNotExist:
             response = {
-                "message": "You can not favourite this article because it doesn't exist"}
+                "message":
+                "You can not favourite this article because it doesn't exist"
+            }
             return Response(response, status=status.HTTP_404_NOT_FOUND)
 
         try:
             favourited = ArticleFavourite.objects.get(
                 user=request.user, article=article)
-            return Response({"error": "you have already favourited the article"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response(
+                {"error": "you have already favourited the article"},
+                status=status.HTTP_406_NOT_ACCEPTABLE)
 
         except ArticleFavourite.DoesNotExist:
             favourited = ArticleFavourite.objects.create(
@@ -580,14 +587,16 @@ class FavouriteAPIView(APIView):
             article = ArticleFavourite.objects.get(
                 user=request.user, article=article, favourited=True)
             article.delete()
-            return Response({"success": "you have successfully deleted"}, status=status.HTTP_202_ACCEPTED)
+            return Response({"success": "you have successfully deleted"},
+                            status=status.HTTP_202_ACCEPTED)
 
         except ArticleFavourite.DoesNotExist:
-            return Response({"error": "you have not favourited this article"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response({"error": "you have not favourited this article"},
+                            status=status.HTTP_406_NOT_ACCEPTABLE)
 
 
 class BookmarkAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, )
 
     def post(self, request, slug):
         CommentVerification.check_profile(self, request.user.id)
@@ -623,8 +632,8 @@ class BookmarkAPIView(APIView):
 
 
 class BookmarksAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-    renderer_classes = (ArticleJSONRenderer,)
+    permission_classes = (IsAuthenticated, )
+    renderer_classes = (ArticleJSONRenderer, )
     serializer_class = BookmarksSerializer
 
     def get(self, request):
@@ -634,8 +643,7 @@ class BookmarksAPIView(APIView):
         for bookmark in articles:
             bookmark.article.tag_list = list(bookmark.article.tag_list.names())
 
-        serializer = self.serializer_class(
-            articles, many=True)
+        serializer = self.serializer_class(articles, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -643,7 +651,7 @@ class BookmarksAPIView(APIView):
 class ReportArticlesView(ListCreateAPIView):
     queryset = ReportArticle.objects.all()
     serializer_class = ReportSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, )
 
     def get_article(self, slug):
         """
@@ -662,30 +670,26 @@ class ReportArticlesView(ListCreateAPIView):
         article = self.get_article(slug)
         if article == "error":
             error_message = {
-                "error_message": "The article you are reporting does not exist"}
+                "error_message": "The article you are reporting does not exist"
+            }
             return Response(error_message)
         else:
             if article.author == request.user:
                 return Response(
                     {"errors": "You cannot report your own article"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
+                    status=status.HTTP_400_BAD_REQUEST)
             """gets the article, report_message and reader"""
             article_reported = article
-            report_message = request.data.get(
-                'report_message', {})
+            report_message = request.data.get('report_message', {})
             reader_report = request.user
 
             no_of_reports = ReportArticle.objects.filter(
-                article=article_reported, reader=reader_report
-            ).count()
+                article=article_reported, reader=reader_report).count()
             """checks if the reader has reported the article more than once"""
             if no_of_reports >= 1:
                 return Response(
                     {"errors": "You can only report an article once"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                    status=status.HTTP_400_BAD_REQUEST)
             report = {
                 'article': article.slug,
                 'report_message': report_message,
@@ -707,20 +711,22 @@ class ReportArticlesView(ListCreateAPIView):
 class GetSingleReportView(RetrieveAPIView):
     queryset = ReportArticle.objects.all()
     serializer_class = ReportSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, )
 
     def get(self, request, slug):
         """
             Returns specific article using slug
         """
         if not request.user.is_superuser:
-            return Response({"message": "You have no permissions"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"message": "You have no permissions"},
+                            status=status.HTTP_401_UNAUTHORIZED)
         try:
             article = Article.objects.get(slug=slug)
             report = ReportArticle.objects.get(article=article)
 
         except Exception as e:
-            return Response({"message": "error"+str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"message": "error" + str(e)},
+                            status=status.HTTP_401_UNAUTHORIZED)
 
         serializer = self.serializer_class(report)
 
@@ -730,19 +736,22 @@ class GetSingleReportView(RetrieveAPIView):
 class GetAllReportsViews(RetrieveAPIView):
     queryset = ReportArticle.objects.all()
     serializer_class = ReportSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, )
 
     def get(self, request):
         """
             Returns specific article using slug
         """
         if not request.user.is_superuser:
-            return Response({"message": "You have no permissions"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"message": "You have no permissions"},
+                            status=status.HTTP_401_UNAUTHORIZED)
 
         reports = ReportArticle.objects.all()
         if len(reports) == 0:
-            return Response({"message": "No reports"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "No reports"},
+                            status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(reports, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -751,108 +760,115 @@ class SocialShareArticle(RetrieveAPIView):
     handle social sharing of an article by an authenticated user
     '''
 
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, )
 
-    def get(self,request,*args,**kwargs):
+    def get(self, request, *args, **kwargs):
         '''
         return a sharable link if you are an authenticated user and 
         enable the user to redirect to the specified url
         '''
 
-        #fetch provider specified in the url
+        # fetch provider specified in the url
         provider = kwargs['provider']
 
-        context = {'request':request}
+        context = {'request': request}
 
-        #try fetch an article using the provided slug from the database
-        #if the article does not exist return 404 not found
+        # try fetch an article using the provided slug from the database
+        # if the article does not exist return 404 not found
 
         try:
             article = Article.objects.get(slug=kwargs['slug'])
 
         except Article.DoesNotExist:
-            raise NotFound({
-                "error": "article was not found"
-            })
+            raise NotFound({"error": "article was not found"})
 
-        article_url = request.build_absolute_uri(
-            "{}article/{}".format(
-                article.slug,
-                provider
-            )
-        )
+        article_url = request.build_absolute_uri("{}article/{}".format(
+            article.slug, provider))
 
         share_link = self.get_link(context, provider, article, article_url)
 
         if not share_link:
-            #where provider is invalid,return a provider invalid error
-            return Response(
-                {
-                    "error":"provider was invalid"
-                }
-            )
+            # where provider is invalid,return a provider invalid error
+            return Response({"error": "provider was invalid"})
 
-        return Response(
-            {
-                "share":{
-                    "link":share_link,
-                    "provider":provider
-                }
-            }, status.HTTP_200_OK
-        )
-    
-    def get_link(self,context,provider,article,article_url):
+        return Response({"share": {
+            "link": share_link,
+            "provider": provider
+        }}, status.HTTP_200_OK)
+
+    def get_link(self, context, provider, article, article_url):
         share_link = None
 
         if provider == "facebook":
             # get link to redirect for a facebook share
 
             share_link = social_share.post_to_facebook_url(
-                context,
-                article_url
-            )['facebook_url']
+                context, article_url)['facebook_url']
 
         elif provider == "twitter":
-            text = "Read this on Authors Heaven: {}".format(
-                article.title
-            )
+            text = "Read this on Authors Heaven: {}".format(article.title)
 
             share_link = social_share.post_to_twitter(
                 context,
                 text,
                 article_url,
-                link_text='Post this article to twitter'
-            )['tweet_url']
+                link_text='Post this article to twitter')['tweet_url']
 
         elif provider == 'reddit':
-            #share link to reddit platform
+            # share link to reddit platform
             share_link = social_share.post_to_reddit_url(
-                context,
-                article.title,
-                article_url
-            )['reddit_url']
-        
-        elif provider == 'linkedin':
-            title = 'Check this article out on Authors Heaven {}'.format(article.title)
+                context, article.title, article_url)['reddit_url']
 
-            #This gets the sharable link for an article to redirect to the linkedin platform
+        elif provider == 'linkedin':
+            title = 'Check this article out on Authors Heaven {}'.format(
+                article.title)
+
+            # This gets the sharable link for an article to redirect to the linkedin platform
 
             share_link = social_share.post_to_linkedin_url(
-                context,
-                title,
-                article_url
-            )['linkedin_url']
+                context, title, article_url)['linkedin_url']
 
         elif provider == "email":
             subtitle = "Wow!An article from Authors Heaven has been shared to you!Read!!"
 
-            #get share link for user to redirect to the email platform
+            # get share link for user to redirect to the email platform
             share_link = social_share.send_email_url(
-                    context,
-                    subtitle,
-                    article_url,
-                )['mailto_url']
-        
-        return share_link
-        
+                context,
+                subtitle,
+                article_url,
+            )['mailto_url']
 
+        return share_link
+
+
+class SearchArticles(APIView):
+    """This class creates a view to perform search and filtering on articles.
+    :returns: a http Response message
+    """
+
+    def get(self, request):
+        """This method creates a GET APIView to search for or filter Articles
+        :params request: this is the HTTP request object
+        :returns: Returns a HTTP Response object
+        """
+
+        query_params = dict(request.GET.items())
+        if not query_params:
+            return Response({'message': 'Please provide a search phrase'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        query_params_values = list(query_params.values())
+        query = Article().search_articles(query_params_values)
+
+        if not query:
+            return Response({
+                'message':
+                'Sorry we could not find what you are looking for.'
+            },
+                            status=status.HTTP_404_NOT_FOUND)
+
+        for article in query:
+            article.tag_list = list(article.tag_list.names())
+        serializer = ArticleSerializer(query, many=True)
+        return Response({'article': serializer.data},
+                        status=status.HTTP_200_OK)

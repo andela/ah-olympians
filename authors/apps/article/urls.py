@@ -1,12 +1,12 @@
 from django.urls import path
-from .views import (ArticlesAPIView, RetrieveArticleAPIView, LikeAPIView, DislikeAPIView, RateAPIView, FavouriteAPIView, CommentsAPIView,
-                    RetrieveCommentsAPIView, SubCommentAPIView, LikeUnlikeAPIView, CommentDislikeAPIView, BookmarkAPIView, 
-                    BookmarksAPIView, ReportArticlesView, GetSingleReportView, GetAllReportsViews, SocialShareArticle)
 
-from .views import (ArticlesAPIView, RetrieveArticleAPIView, LikeAPIView, DislikeAPIView, RateAPIView, FavouriteAPIView, CommentsAPIView,
-                    RetrieveCommentsAPIView, SubCommentAPIView, LikeUnlikeAPIView, CommentDislikeAPIView, BookmarkAPIView, BookmarksAPIView)
+from .views import (ArticlesAPIView, RetrieveArticleAPIView, LikeAPIView, DislikeAPIView, RateAPIView, FavouriteAPIView,
+                    CommentsAPIView,
+                    RetrieveCommentsAPIView, SubCommentAPIView, LikeUnlikeAPIView, CommentDislikeAPIView,
+                    BookmarkAPIView,
+                    BookmarksAPIView, ReportArticlesView, GetSingleReportView, GetAllReportsViews, SocialShareArticle,
+                    SearchArticles)
 
-                    
 app_name = "articles"
 
 urlpatterns = [
@@ -19,12 +19,13 @@ urlpatterns = [
     path('articles/<slug>/comments/<pk>', RetrieveCommentsAPIView.as_view()),
     path('articles/<slug>/comments/<pk>/subcomment', SubCommentAPIView.as_view()),
     path('articles/<slug>/like_comment/<pk>', LikeUnlikeAPIView.as_view()),
-    path('articles/<slug>/dislike_comment/<pk>',CommentDislikeAPIView.as_view()),
+    path('articles/<slug>/dislike_comment/<pk>', CommentDislikeAPIView.as_view()),
     path('articles/<slug>/favorite', FavouriteAPIView.as_view()),
     path('articles/<slug>/bookmark', BookmarkAPIView.as_view()),
     path('bookmarks/', BookmarksAPIView.as_view()),
-    path('report/<slug>/',ReportArticlesView.as_view()),
-    path('reports/<slug>/',GetSingleReportView.as_view()),
-    path('reports/',GetAllReportsViews.as_view()),
-     path("articles/<str:slug>/share/<str:provider>", SocialShareArticle.as_view() , name="share_article")
+    path('report/<slug>/', ReportArticlesView.as_view()),
+    path('reports/<slug>/', GetSingleReportView.as_view()),
+    path('reports/', GetAllReportsViews.as_view()),
+    path("articles/<str:slug>/share/<str:provider>", SocialShareArticle.as_view(), name="share_article"),
+    path('search/articles', SearchArticles.as_view())
 ]

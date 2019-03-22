@@ -1,4 +1,7 @@
-from cloudinary.models import CloudinaryField
+from functools import reduce
+import operator
+
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchVectorField
 from django.db import models
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -24,6 +27,7 @@ class Article(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     author = models.ForeignKey(
         User, related_name="articles", on_delete=models.CASCADE)
+    search_vector = SearchVectorField(null=True)
 
     def __str__(self):
         return self.title
@@ -44,6 +48,25 @@ class Article(models.Model):
                 origin += 1
             self.slug = unique_slug
         super().save(*args, **kwargs)
+
+    def search_articles(self, args):
+        """ This method is used to search for articles.
+        Given a list of arguments, it performs a full text search query.
+        :params *args: list of arguments to query against
+        :returns: a queryset
+        """
+        query_args = []
+
+        for val in args:
+            query_args.append(SearchQuery(val))
+
+        search_vector = SearchVector('title', 'body', 'slug',
+                                     'author__username', 'tag_list__name')
+
+        query = Article.objects.annotate(search=search_vector).filter(
+            search=reduce(operator.and_, query_args, SearchQuery('')))
+
+        return query
 
 
 class ArticleImage(models.Model):
