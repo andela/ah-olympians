@@ -3,11 +3,9 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework import response
-
 from authors.apps.authentication.serializers import UserSerializer
-from .models import Article, ArticleLikes, Rate, ArticleComment, ArticleFavourite, ArticleBookmark
+from .models import Article, ArticleLikes, Rate, ArticleComment, ArticleFavourite, ArticleBookmark, ReportArticle
 from ..profiles.serializers import ProfileSerializer
-
 
 class LikesSerializer(serializers.ModelSerializer):
     """
@@ -252,11 +250,30 @@ class RateSerializer(serializers.ModelSerializer):
 
 class SubcommentSerializer(serializers.ModelSerializer):
     author = ProfileSerializer(read_only=True)
+    like = serializers.SerializerMethodField()
+    total_likes = serializers.SerializerMethodField()
+    dislike = serializers.SerializerMethodField()
+    total_dislikes = serializers.SerializerMethodField()
 
     class Meta:
         model = ArticleComment
-        fields = ['id', 'article', 'createdAt', 'updatedAt',
-                  'body', 'author', 'like', 'dislike', 'is_active', 'subcomments']
+        fields = ['id', 'article', 'createdAt', 'updatedAt', 'body', 'author', 'like', 'total_likes', 'dislike', 'total_dislikes', 'is_active', 'subcomments']
+
+    def get_like(self, comment):
+        request = self.context.get('request', None)
+        return ArticleComment.get_like_status(request.user.profile, comment.id, 'like')
+
+    def get_dislike(self, comment):
+        request = self.context.get('request', None)
+        return ArticleComment.get_like_status(request.user.profile, comment.id, 'dislike')
+
+    def get_total_likes(self, comment):
+        return ArticleComment.get_comment_likes_dislikes(comment.id, 'like')
+
+    def get_total_dislikes(self, comment):
+        return ArticleComment.get_comment_likes_dislikes(comment.id, 'dislike')
+
+
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -265,11 +282,28 @@ class CommentSerializer(serializers.ModelSerializer):
     """
     subcomments = SubcommentSerializer(many=True, read_only=True)
     author = ProfileSerializer(read_only=True)
+    like = serializers.SerializerMethodField()
+    total_likes = serializers.SerializerMethodField()
+    dislike = serializers.SerializerMethodField()
+    total_dislikes = serializers.SerializerMethodField()
 
     class Meta:
         model = ArticleComment
-        fields = ['id', 'article', 'createdAt', 'updatedAt',
-                  'body', 'author', 'like', 'dislike', 'is_active', 'subcomments']
+        fields = ['id', 'article', 'createdAt', 'updatedAt', 'body', 'author', 'like', 'total_likes', 'dislike', 'total_dislikes', 'is_active', 'subcomments']
+
+    def get_like(self, comment):
+        request = self.context.get('request', None)
+        return ArticleComment.get_like_status(request.user.profile, comment.id, 'like')
+
+    def get_dislike(self, comment):
+        request = self.context.get('request', None)
+        return ArticleComment.get_like_status(request.user.profile, comment.id, 'dislike')
+
+    def get_total_likes(self, comment):
+        return ArticleComment.get_comment_likes_dislikes(comment.id, 'like')
+
+    def get_total_dislikes(self, comment):
+        return ArticleComment.get_comment_likes_dislikes(comment.id, 'dislike')
 
 
 class DeleteCommentSerializer(serializers.ModelSerializer):
@@ -281,7 +315,6 @@ class DeleteCommentSerializer(serializers.ModelSerializer):
         model = ArticleComment
         fields = ['is_active']
 
-
 class BookmarksSerializer(serializers.ModelSerializer):
     """
     converts the model into JSON format
@@ -291,3 +324,17 @@ class BookmarksSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ['id', 'article']
+
+class ReportSerializer(serializers.ModelSerializer):
+    """
+        Report model serializers
+    """
+    def get_article(self, obj):
+        """
+        Gets article slug
+        """
+        return obj.article.slug
+
+    class Meta:
+        model = ReportArticle
+        fields = ['article','report_message','reader']

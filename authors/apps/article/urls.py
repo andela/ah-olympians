@@ -1,4 +1,7 @@
 from django.urls import path
+from .views import (ArticlesAPIView, RetrieveArticleAPIView, LikeAPIView, DislikeAPIView, RateAPIView, FavouriteAPIView, CommentsAPIView,
+                    RetrieveCommentsAPIView, SubCommentAPIView, LikeUnlikeAPIView, CommentDislikeAPIView, BookmarkAPIView, BookmarksAPIView, ReportArticlesView, GetSingleReportView, GetAllReportsViews)
+
 
 from .views import (ArticlesAPIView, RetrieveArticleAPIView, LikeAPIView, DislikeAPIView, RateAPIView, FavouriteAPIView, CommentsAPIView,
                     RetrieveCommentsAPIView, SubCommentAPIView, LikeUnlikeAPIView, CommentDislikeAPIView, BookmarkAPIView, BookmarksAPIView)
@@ -20,4 +23,7 @@ urlpatterns = [
     path('articles/<slug>/favorite', FavouriteAPIView.as_view()),
     path('articles/<slug>/bookmark', BookmarkAPIView.as_view()),
     path('bookmarks/', BookmarksAPIView.as_view()),
+    path('report/<slug>/',ReportArticlesView.as_view()),
+    path('reports/<slug>/',GetSingleReportView.as_view()),
+    path('reports/',GetAllReportsViews.as_view()),
 ]
