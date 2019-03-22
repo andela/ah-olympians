@@ -5,7 +5,7 @@ from rest_framework import serializers
 from rest_framework import response
 
 from authors.apps.authentication.serializers import UserSerializer
-from .models import Article, ArticleLikes, Rate, ArticleComment, ArticleFavourite
+from .models import Article, ArticleLikes, Rate, ArticleComment, ArticleFavourite, ArticleBookmark
 from ..profiles.serializers import ProfileSerializer
 
 
@@ -170,19 +170,6 @@ class ArticleSerializer(serializers.ModelSerializer):
         """
         return obj.liked.filter(dislikes=-1).count()
 
-    def get_rates(self, obj):
-        """
-            Returns rating average
-        """
-        average = Rate.objects.filter(
-            article__pk=obj.pk).aggregate(Avg('your_rating'))
-
-        if average['your_rating__avg'] is None:
-            average_rating = 0
-            return average_rating
-
-        return average['your_rating__avg']
-
     def get_favourited(self, obj):
         """
         This method returns true or false on querying for favourited articel
@@ -295,12 +282,12 @@ class DeleteCommentSerializer(serializers.ModelSerializer):
         fields = ['is_active']
 
 
-class GetArticleSerializer(serializers.ModelSerializer):
-    tag_list = serializers.SerializerMethodField()
-
-    def get_tag_list(self, article):
-        return list(article.tag_list.names())
+class BookmarksSerializer(serializers.ModelSerializer):
+    """
+    converts the model into JSON format
+    """
+    article = ArticleSerializer(read_only=True)
 
     class Meta:
         model = Article
-        fields = '__all__'
+        fields = ['id', 'article']

@@ -55,37 +55,38 @@ class ProfileTest(APITestCase):
         """
         test create profile  yet it already exists
         """
-        #create profile
+        # create profile
         self.client.post(
             '/api/profile/create_profile/', self.profile, format='json')
 
-        #create profile again
+        # create profile again
         response = self.client.post(
             '/api/profile/create_profile/', self.profile, format='json')
         result = json.loads(response.content)
 
-        self.assertEqual(result["profile"]["message"], "A user with this profile already exists")
+        self.assertEqual(result["profile"]["message"],
+                         "A user with this profile already exists")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_profile_while_deactivated(self):
         """
         test create profile  when profile is deactivated
         """
-        #create profile
+        # create profile
         self.client.post(
             '/api/profile/create_profile/', self.profile, format='json')
 
-        #Deactivate profile
+        # Deactivate profile
         response = self.client.put(
             '/api/profile/deactivate_profile/', format='json')
 
-        #create profile again
+        # create profile again
         response = self.client.post(
             '/api/profile/create_profile/', self.profile, format='json')
         result = json.loads(response.content)
 
         self.assertEqual(result["profile"]["message"],
-            "You deactivated your profile. Please activate to continue")
+                         "You deactivated your profile. Please activate to continue")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_view_profile(self):
@@ -184,20 +185,19 @@ class ProfileTest(APITestCase):
         self.assertEqual(result["profile"]["interests"], "music")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-
     def test_edit_non_existent_profile(self):
         """
         test editing a profile that does not exist
         """
         # edit profile
         self.profile["interests"] = "music"
-        
+
         response = self.client.put(
             '/api/profile/edit_profile/', self.profile, format='json')
         result = json.loads(response.content)
 
         self.assertEqual(result["profile"]["message"],
-            "User profile not found. Please create one")
+                         "User profile not found. Please create one")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_deactivate_profile(self):
@@ -207,26 +207,26 @@ class ProfileTest(APITestCase):
         # create profile
         self.client.post(
             '/api/profile/create_profile/', self.profile, format='json')
-        
+
         response = self.client.put(
             '/api/profile/deactivate_profile/', format='json')
         result = json.loads(response.content)
 
         self.assertEqual(result["profile"]["active_profile"],
-            False)
+                         False)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_deactivate_nonexistent_profile(self):
         """
         test deactivating a non-existent profile
         """
-        
+
         response = self.client.put(
             '/api/profile/deactivate_profile/', format='json')
         result = json.loads(response.content)
 
         self.assertEqual(result["profile"]["message"],
-            "User profile not found")
+                         "User profile not found")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_deactivate_profile_already_deactivated(self):
@@ -239,13 +239,13 @@ class ProfileTest(APITestCase):
         # deactivate
         self.client.put(
             '/api/profile/deactivate_profile/', format='json')
-        
+
         response = self.client.put(
             '/api/profile/deactivate_profile/', format='json')
         result = json.loads(response.content)
 
         self.assertEqual(result["profile"]["message"],
-            "You deactivated your profile. Please activate to continue")
+                         "You deactivated your profile. Please activate to continue")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_activate_profile(self):
@@ -258,13 +258,13 @@ class ProfileTest(APITestCase):
         # deactivate
         self.client.put(
             '/api/profile/deactivate_profile/', format='json')
-        
+
         response = self.client.put(
             '/api/profile/activate_profile/', format='json')
         result = json.loads(response.content)
 
         self.assertEqual(result["profile"]["active_profile"],
-            True)
+                         True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_activate_profile_already_activated(self):
@@ -274,26 +274,26 @@ class ProfileTest(APITestCase):
         # create profile
         self.client.post(
             '/api/profile/create_profile/', self.profile, format='json')
-        
+
         response = self.client.put(
             '/api/profile/activate_profile/', format='json')
         result = json.loads(response.content)
 
         self.assertEqual(result["profile"]["message"],
-            "Your profile is already active and viewable by other users")
+                         "Your profile is already active and viewable by other users")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_deactivate_nonexistent_profile(self):
         """
         test activating a non-existent profile
         """
-        
+
         response = self.client.put(
             '/api/profile/activate_profile/', format='json')
         result = json.loads(response.content)
 
         self.assertEqual(result["profile"]["message"],
-            "User profile not found")
+                         "User profile not found")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_wrong_upload_at_edit(self):
@@ -309,7 +309,7 @@ class ProfileTest(APITestCase):
         result = json.loads(response.content)
 
         self.assertEqual(result["profile"]["message"],
-            "Only '.png', '.jpg', '.jpeg' files are accepted")
+                         "Only '.png', '.jpg', '.jpeg' files are accepted")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
@@ -368,8 +368,6 @@ class TestFollowUnFollow(APITestCase):
             "active_profile": True
         }
 
-
-
         # create users
         result = self.client.post('/api/users/', self.user, format='json')
         result = self.client.post('/api/users/', self.user2, format='json')
@@ -383,8 +381,9 @@ class TestFollowUnFollow(APITestCase):
         self.client.credentials(
             HTTP_AUTHORIZATION='Token ' + token)
 
-        result = self.client.post('/api/profile/create_profile/', self.profile, format='json')
-    
+        result = self.client.post(
+            '/api/profile/create_profile/', self.profile, format='json')
+
     def test_follow_profile(self):
         response = self.client.post(
             '/api/users/login/', self.user2, format='json')
@@ -394,15 +393,17 @@ class TestFollowUnFollow(APITestCase):
         self.client.credentials(
             HTTP_AUTHORIZATION='Token ' + token)
 
-        result = self.client.post('/api/profile/create_profile/', self.profile2, format='json')
+        result = self.client.post(
+            '/api/profile/create_profile/', self.profile2, format='json')
 
         target_profile = User.objects.get(username="caro")
-        response = self.client.post('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        response = self.client.post(
+            '/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
         result = json.loads(response.content)
 
         self.assertEqual(result["message"],
-            "{}, you have successfully followed {}".format(self.user2["user"]["username"],
-                self.user["user"]["username"]))
+                         "{}, you have successfully followed {}".format(self.user2["user"]["username"],
+                                                                        self.user["user"]["username"]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_unfollow_profile(self):
@@ -414,16 +415,19 @@ class TestFollowUnFollow(APITestCase):
         self.client.credentials(
             HTTP_AUTHORIZATION='Token ' + token)
 
-        result = self.client.post('/api/profile/create_profile/', self.profile2, format='json')
+        result = self.client.post(
+            '/api/profile/create_profile/', self.profile2, format='json')
 
         target_profile = User.objects.get(username="caro")
-        self.client.post('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
-        response = self.client.delete('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        self.client.post('/api/profile/view_profile/' +
+                         str(target_profile.id) + '/follow/', format='json')
+        response = self.client.delete(
+            '/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
         result = json.loads(response.content)
 
         self.assertEqual(result["message"],
-            "{}, you have successfully unfollowed {}".format(self.user2["user"]["username"],
-                self.user["user"]["username"]))
+                         "{}, you have successfully unfollowed {}".format(self.user2["user"]["username"],
+                                                                          self.user["user"]["username"]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_follow_profile_wrong_id(self):
@@ -435,14 +439,16 @@ class TestFollowUnFollow(APITestCase):
         self.client.credentials(
             HTTP_AUTHORIZATION='Token ' + token)
 
-        result = self.client.post('/api/profile/create_profile/', self.profile2, format='json')
+        result = self.client.post(
+            '/api/profile/create_profile/', self.profile2, format='json')
 
         target_profile = "n"
-        response = self.client.post('/api/profile/view_profile/' + str(target_profile) + '/follow/', format='json')
+        response = self.client.post(
+            '/api/profile/view_profile/' + str(target_profile) + '/follow/', format='json')
         result = json.loads(response.content)
 
         self.assertEqual(result["message"],
-            "User ID must be an integer")
+                         "User ID must be an integer")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_follow_nonexistent_profile(self):
@@ -454,14 +460,16 @@ class TestFollowUnFollow(APITestCase):
         self.client.credentials(
             HTTP_AUTHORIZATION='Token ' + token)
 
-        result = self.client.post('/api/profile/create_profile/', self.profile2, format='json')
+        result = self.client.post(
+            '/api/profile/create_profile/', self.profile2, format='json')
 
         target_profile = User.objects.get(username="winnie")
-        response = self.client.post('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        response = self.client.post(
+            '/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
         result = json.loads(response.content)
 
         self.assertEqual(result["message"],
-            "We did not find such a profile.")
+                         "We did not find such a profile.")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_follow_profile_twice(self):
@@ -473,16 +481,19 @@ class TestFollowUnFollow(APITestCase):
         self.client.credentials(
             HTTP_AUTHORIZATION='Token ' + token)
 
-        result = self.client.post('/api/profile/create_profile/', self.profile2, format='json')
+        result = self.client.post(
+            '/api/profile/create_profile/', self.profile2, format='json')
 
         target_profile = User.objects.get(username="caro")
-        self.client.post('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
-        response = self.client.post('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        self.client.post('/api/profile/view_profile/' +
+                         str(target_profile.id) + '/follow/', format='json')
+        response = self.client.post(
+            '/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
         result = json.loads(response.content)
 
         self.assertEqual(result["message"],
-            "{}, you already follow {}".format(self.user2["user"]["username"],
-                self.user["user"]["username"]))
+                         "{}, you already follow {}".format(self.user2["user"]["username"],
+                                                            self.user["user"]["username"]))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_unfollow_profile_twice(self):
@@ -494,17 +505,21 @@ class TestFollowUnFollow(APITestCase):
         self.client.credentials(
             HTTP_AUTHORIZATION='Token ' + token)
 
-        result = self.client.post('/api/profile/create_profile/', self.profile2, format='json')
+        result = self.client.post(
+            '/api/profile/create_profile/', self.profile2, format='json')
 
         target_profile = User.objects.get(username="caro")
-        self.client.post('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
-        self.client.delete('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
-        response = self.client.delete('/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
+        self.client.post('/api/profile/view_profile/' +
+                         str(target_profile.id) + '/follow/', format='json')
+        self.client.delete('/api/profile/view_profile/' +
+                           str(target_profile.id) + '/follow/', format='json')
+        response = self.client.delete(
+            '/api/profile/view_profile/' + str(target_profile.id) + '/follow/', format='json')
         result = json.loads(response.content)
 
         self.assertEqual(result["message"],
-            "{}, you do not follow {}".format(self.user2["user"]["username"],
-                self.user["user"]["username"]))
+                         "{}, you do not follow {}".format(self.user2["user"]["username"],
+                                                           self.user["user"]["username"]))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_follow_self(self):
@@ -516,7 +531,8 @@ class TestFollowUnFollow(APITestCase):
         self.client.credentials(
             HTTP_AUTHORIZATION='Token ' + token)
 
-        result = self.client.post('/api/profile/create_profile/', self.profile2, format='json')
+        result = self.client.post(
+            '/api/profile/create_profile/', self.profile2, format='json')
 
         target_profile = User.objects.get(username="kibet")
         response = self.client.post(
@@ -524,7 +540,7 @@ class TestFollowUnFollow(APITestCase):
         result = json.loads(response.content)
 
         self.assertEqual(result["message"],
-            "You cannot follow yourself.")
+                         "You cannot follow yourself.")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_unfollow_self(self):
@@ -545,7 +561,7 @@ class TestFollowUnFollow(APITestCase):
         result = json.loads(response.content)
 
         self.assertEqual(result["message"],
-            "You cannot unfollow yourself.")
+                         "You cannot unfollow yourself.")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_following_list(self):
@@ -601,9 +617,3 @@ class TestFollowUnFollow(APITestCase):
 
         self.assertIn("kibet", result["profile"]["followers"])
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-
-        
-
-
-   

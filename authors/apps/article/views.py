@@ -8,10 +8,10 @@ from rest_framework import serializers, status
 from django.db.models import Avg
 
 
+from .serializers import ArticleSerializer, CommentSerializer, DeleteCommentSerializer, RateSerializer, BookmarksSerializer
 from ..profiles.models import UserProfile
-from .models import Article, ArticleImage, ArticleLikes, Rate, ArticleFavourite, ArticleComment, LikeComment
+from .models import Article, ArticleImage, ArticleLikes, Rate, ArticleFavourite, ArticleComment, LikeComment, ArticleBookmark
 from .renderer import ArticleJSONRenderer, CommentJSONRenderer
-from .serializers import ArticleSerializer, CommentSerializer, DeleteCommentSerializer, RateSerializer
 
 
 class ArticlesAPIView(APIView):
@@ -52,8 +52,11 @@ class ArticlesAPIView(APIView):
         """
         Retrieve all articles
         """
-        article = Article.objects.all()
-        serializer = ArticleSerializer(article, many=True, context={'request': self.request})
+        articles = Article.objects.all()
+        for article in articles:
+            article.tag_list = list(article.tag_list.names())
+        serializer = ArticleSerializer(articles, many=True, context={
+                                       'request': self.request})
         return Response(serializer.data)
 
     def destroy(self, request, slug):
@@ -77,7 +80,6 @@ class ArticlesAPIView(APIView):
         response = {"message": "article deleted"}
         return Response(response, status=status.HTTP_204_NO_CONTENT)
 
-
     def update(self, request, slug):
         """
         UPDATE an article
@@ -100,7 +102,6 @@ class ArticlesAPIView(APIView):
             return Response(response, status=status.HTTP_401_UNAUTHORIZED)
 
 
-
 class RetrieveArticleAPIView(APIView):
     """
     this class that handles the get request with slug
@@ -115,7 +116,8 @@ class RetrieveArticleAPIView(APIView):
         try:
             article = Article.objects.get(slug=slug)
             article.tag_list = list(article.tag_list.names())
-            serializer = ArticleSerializer(article, many=False, context={'request': self.request})
+            serializer = ArticleSerializer(article, many=False, context={
+                                           'request': self.request})
             return Response({'article': serializer.data},
                             status=status.HTTP_200_OK)
         except Article.DoesNotExist:
@@ -134,7 +136,8 @@ class RetrieveArticleAPIView(APIView):
         except Article.DoesNotExist:
             return Response({"error": "the article was not found"},
                             status=status.HTTP_404_NOT_FOUND)
-        serializer = ArticleSerializer(article, data=request.data, context={'request': self.request})
+        serializer = ArticleSerializer(article, data=request.data, context={
+                                       'request': self.request})
         serializer.is_valid(raise_exception=True)
 
         if article.author.id == request.user.id:
@@ -331,12 +334,12 @@ class CommentVerification(object):
 
     def article_exists(self, slug):
         try:
-            Article.objects.get(slug=slug)
+            article = Article.objects.get(slug=slug)
         except (Exception, Article.DoesNotExist):
             APIException.status_code = status.HTTP_404_NOT_FOUND
             raise APIException({"error": "Article does not exist!"})
 
-        return True
+        return article
 
     def comment_exists(self, slug, pk):
         try:
@@ -377,6 +380,7 @@ class CommentVerification(object):
                         self, return_data, profile_id, return_data['id'])
 
         return serial_data
+
 
 class CommentsAPIView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -484,15 +488,15 @@ class SubCommentAPIView(APIView):
         serializer = self.serializer_class(ArticleComment.objects.filter(
             article=kwargs['slug'], parent_comment=kwargs['pk']), many=True)
         serializer_data = serializer.data
-        return_data = CommentVerification.check_like(
-            self, serializer_data, request.user.profile, get_comment.id)
-        return Response(return_data, status=status.HTTP_200_OK)
+        for return_data in serializer_data:
+            return_data = CommentVerification.check_like(
+                self, return_data, request.user.profile, return_data['id'])
+        return Response(serializer_data, status=status.HTTP_200_OK)
 
 
 class LikeUnlikeAPIView(APIView):
     permission_classes = (IsAuthenticated,)
     renderer_classes = (CommentJSONRenderer,)
-    serializer_class = CommentSerializer
 
     def post(self, request, **kwargs):
         CommentVerification.check_profile(self, request.user.id)
@@ -508,7 +512,6 @@ class LikeUnlikeAPIView(APIView):
 class CommentDislikeAPIView(APIView):
     permission_classes = (IsAuthenticated,)
     renderer_classes = (CommentJSONRenderer,)
-    serializer_class = CommentSerializer
 
     def post(self, request, **kwargs):
         CommentVerification.check_profile(self, request.user.id)
@@ -537,15 +540,18 @@ class FavouriteAPIView(APIView):
         try:
             article = Article.objects.get(slug=slug)
         except Article.DoesNotExist:
-            response = {"message": "You can not favourite this article because it doesn't exist"}
+            response = {
+                "message": "You can not favourite this article because it doesn't exist"}
             return Response(response, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            favourited = ArticleFavourite.objects.get(user=request.user, article=article)
+            favourited = ArticleFavourite.objects.get(
+                user=request.user, article=article)
             return Response({"error": "you have already favourited the article"}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
         except ArticleFavourite.DoesNotExist:
-            favourited = ArticleFavourite.objects.create(user=request.user, article=article, favourited=True)
+            favourited = ArticleFavourite.objects.create(
+                user=request.user, article=article, favourited=True)
             response = {"message": "Successfully favourited the article"}
             return Response(response, status=status.HTTP_202_ACCEPTED)
 
@@ -563,10 +569,66 @@ class FavouriteAPIView(APIView):
             return Response(response, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            favourited = ArticleFavourite.objects.get(user=request.user, article=article)
-            article = ArticleFavourite.objects.get(user=request.user, article=article, favourited=True)
+            favourited = ArticleFavourite.objects.get(
+                user=request.user, article=article)
+            article = ArticleFavourite.objects.get(
+                user=request.user, article=article, favourited=True)
             article.delete()
             return Response({"success": "you have successfully deleted"}, status=status.HTTP_202_ACCEPTED)
 
         except ArticleFavourite.DoesNotExist:
             return Response({"error": "you have not favourited this article"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+
+class BookmarkAPIView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, slug):
+        CommentVerification.check_profile(self, request.user.id)
+        article = CommentVerification.article_exists(self, slug)
+
+        return_data = ArticleBookmark.create_bookmark(request.user, article)
+        return_message = {}
+
+        if 'error' in return_data:
+            return_message = Response(
+                return_data, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return_message = Response(
+                return_data, status=status.HTTP_201_CREATED)
+
+        return return_message
+
+    def delete(self, request, slug):
+        CommentVerification.check_profile(self, request.user.id)
+        CommentVerification.article_exists(self, slug)
+
+        return_data = ArticleBookmark.remove_bookmark(request.user.id, slug)
+        return_message = {}
+
+        if 'error' in return_data:
+            return_message = Response(
+                return_data, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return_message = Response(
+                return_data, status=status.HTTP_204_NO_CONTENT)
+
+        return return_message
+
+
+class BookmarksAPIView(APIView):
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (ArticleJSONRenderer,)
+    serializer_class = BookmarksSerializer
+
+    def get(self, request):
+        CommentVerification.check_profile(self, request.user.id)
+
+        articles = ArticleBookmark.objects.filter(user=request.user.id)
+        for bookmark in articles:
+            bookmark.article.tag_list = list(bookmark.article.tag_list.names())
+
+        serializer = self.serializer_class(
+            articles, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
