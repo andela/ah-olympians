@@ -3,15 +3,24 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.views import APIView
-from rest_framework.generics import GenericAPIView
 from rest_framework import serializers, status
 from django.db.models import Avg
 
 
 from .serializers import ArticleSerializer, CommentSerializer, DeleteCommentSerializer, RateSerializer, BookmarksSerializer
 from ..profiles.models import UserProfile
-from .models import Article, ArticleImage, ArticleLikes, Rate, ArticleFavourite, ArticleComment, LikeComment, ArticleBookmark
+from .models import Article, ArticleImage, ArticleLikes, Rate, ArticleFavourite, ArticleComment, LikeComment, ArticleBookmark, ReportArticle
+from rest_framework.generics import GenericAPIView , ListCreateAPIView, RetrieveAPIView
+from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework import serializers, status
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.core.mail import EmailMultiAlternatives
+from ..profiles.models import UserProfile
+from .serializers import ArticleSerializer, CommentSerializer, DeleteCommentSerializer, RateSerializer,ReportSerializer
 from .renderer import ArticleJSONRenderer, CommentJSONRenderer
+from authors.apps.authentication.utils import send_email
+from .utils import email_message
 
 
 class ArticlesAPIView(APIView):
@@ -45,7 +54,7 @@ class ArticlesAPIView(APIView):
                         description="image for article")
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        except IntegrityError:
+        except IntegrityError as e:
             raise APIException({"warning": "the slug is already used"})
 
     def get(self, request):
@@ -615,7 +624,6 @@ class BookmarkAPIView(APIView):
 
         return return_message
 
-
 class BookmarksAPIView(APIView):
     permission_classes = (IsAuthenticated,)
     renderer_classes = (ArticleJSONRenderer,)
@@ -632,3 +640,107 @@ class BookmarksAPIView(APIView):
             articles, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ReportArticlesView(ListCreateAPIView):
+    queryset = ReportArticle.objects.all()
+    serializer_class = ReportSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_article(self, slug):
+        """
+            Returns specific article using slug
+        """
+        
+        try:
+            article = Article.objects.get(slug=slug)
+           
+            return article
+        except:
+            return "error"
+
+    def post(self, request, slug):
+        """Checks if there is an article with that slug"""
+        article = self.get_article(slug)
+        if article == "error":
+            error_message = {"error_message":"The article you are reporting does not exist"}
+            return Response(error_message)
+        else:
+            if article.author == request.user:
+                return Response(
+                    {"errors": "You cannot report your own article"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            """gets the article, report_message and reader"""
+            article_reported = article
+            report_message = request.data.get(
+                'report_message', {})
+            reader_report = request.user
+            
+            no_of_reports = ReportArticle.objects.filter(
+                article=article_reported, reader=reader_report
+            ).count()
+            """checks if the reader has reported the article more than once"""
+            if no_of_reports >= 1:
+                return Response(
+                    {"errors": "You can only report an article once"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            report = {
+                'article': article.slug,
+                'report_message': report_message,
+                'reader': request.user
+            }
+            """A sample report"""
+            serializer = self.serializer_class(data=report)
+            serializer.is_valid(raise_exception=True)
+            content = "Your report has been sent successfully to the admin "
+            response_message = {"message": content}
+            email_address = "andelaolympians@gmail.com"
+            subject = "Article Reports"
+            message = email_message(article.slug, report_message)
+            mail_sent = send_email(email_address, subject, message)
+            serializer.save()
+            return Response(response_message, status=status.HTTP_200_OK)
+
+class GetSingleReportView(RetrieveAPIView):
+    queryset = ReportArticle.objects.all()
+    serializer_class = ReportSerializer
+    permission_classes = (IsAuthenticated,)    
+    
+    def get(self, request, slug):
+        """
+            Returns specific article using slug
+        """
+        if not request.user.is_superuser:
+            return Response({"message":"You have no permissions"}, status=status.HTTP_401_UNAUTHORIZED) 
+        try:
+            article = Article.objects.get(slug=slug)
+            report = ReportArticle.objects.get(article=article)
+            
+        except Exception as e:
+            return Response({"message":"error"+str(e)}, status=status.HTTP_401_UNAUTHORIZED) 
+
+        serializer = self.serializer_class(report)
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class GetAllReportsViews(RetrieveAPIView):
+    queryset = ReportArticle.objects.all()
+    serializer_class = ReportSerializer
+    permission_classes = (IsAuthenticated,)    
+    
+    def get(self, request):
+        """
+            Returns specific article using slug
+        """
+        if not request.user.is_superuser:
+            return Response({"message":"You have no permissions"}, status=status.HTTP_401_UNAUTHORIZED) 
+    
+        reports = ReportArticle.objects.all() 
+        if len(reports)==0:
+            return Response({"message":"No reports"}, status=status.HTTP_404_NOT_FOUND)  
+        serializer = self.serializer_class(reports, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+

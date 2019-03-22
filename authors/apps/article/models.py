@@ -166,7 +166,6 @@ class ArticleComment(models.Model):
     def __str__(self):
         return self.body[:20]
 
-
 class LikeComment(models.Model):
     """This class creates a model for comments likes and dislikes"""
     user_like = models.ForeignKey(
@@ -280,3 +279,21 @@ class ArticleBookmark(models.Model):
             bookmark_exist.delete()
 
         return return_message
+class ReportArticle(models.Model):
+    """
+        Report  model schema
+    """
+    article = models.ForeignKey(
+        Article,
+        to_field='slug',
+        on_delete=models.CASCADE
+    )
+    report_message = models.CharField(
+        max_length=225,null=False
+    )
+    reader = models.ForeignKey(
+        User,
+        to_field='email',
+        on_delete=models.CASCADE
+    )
+

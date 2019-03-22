@@ -3,11 +3,9 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework import response
-
 from authors.apps.authentication.serializers import UserSerializer
-from .models import Article, ArticleLikes, Rate, ArticleComment, ArticleFavourite, ArticleBookmark
+from .models import Article, ArticleLikes, Rate, ArticleComment, ArticleFavourite, ArticleBookmark, ReportArticle
 from ..profiles.serializers import ProfileSerializer
-
 
 class LikesSerializer(serializers.ModelSerializer):
     """
@@ -281,7 +279,6 @@ class DeleteCommentSerializer(serializers.ModelSerializer):
         model = ArticleComment
         fields = ['is_active']
 
-
 class BookmarksSerializer(serializers.ModelSerializer):
     """
     converts the model into JSON format
@@ -291,3 +288,29 @@ class BookmarksSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ['id', 'article']
+
+class GetArticleSerializer(serializers.ModelSerializer):
+    tag_list = serializers.SerializerMethodField()
+
+    def get_tag_list(self, article):
+        return list(article.tag_list.names())
+
+    class Meta:
+        model = Article
+        fields = '__all__'
+
+class ReportSerializer(serializers.ModelSerializer):
+    """
+        Report model serializers
+    """
+    def get_article(self, obj):
+        """
+        Gets article slug
+        """
+        return obj.article.slug
+
+    class Meta:
+        model = ReportArticle
+        fields = ['article','report_message','reader']
+
+    
