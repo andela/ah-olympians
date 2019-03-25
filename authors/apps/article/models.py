@@ -157,7 +157,9 @@ class ArticleComment(models.Model):
     author = models.ForeignKey(
         UserProfile, related_name="comments", on_delete=models.CASCADE)
     like = models.BooleanField(default=False)
+    total_likes = models.IntegerField(null=True)
     dislike = models.BooleanField(default=False)
+    total_dislikes = models.IntegerField(null=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -165,6 +167,22 @@ class ArticleComment(models.Model):
 
     def __str__(self):
         return self.body[:20]
+
+    @staticmethod
+    def get_like_status(user_id, comment_id, like_type):
+        try:
+            like_comment = LikeComment.objects.get(
+                user_like=user_id, comment=comment_id, like_type=like_type)
+            return like_comment
+        except LikeComment.DoesNotExist:
+            pass
+
+        return False
+
+    @staticmethod
+    def get_comment_likes_dislikes(comment_id, like_type):
+        return LikeComment.objects.filter(comment=comment_id, like_type=like_type).count()
+
 
 class LikeComment(models.Model):
     """This class creates a model for comments likes and dislikes"""
@@ -180,22 +198,11 @@ class LikeComment(models.Model):
         ordering = ('like_type',)
 
     @staticmethod
-    def get_like_status(user_id, comment_id, like_type):
-        try:
-            like_comment = LikeComment.objects.get(
-                user_like=user_id, comment=comment_id, like_type=like_type)
-            return like_comment
-        except LikeComment.DoesNotExist:
-            pass
-
-        return False
-
-    @staticmethod
     def comment_like_unlike(user_id, comment_id):
-        like_status = LikeComment.get_like_status(user_id, comment_id, 'like')
+        like_status = ArticleComment.get_like_status(user_id, comment_id, 'like')
         return_message = {"message": "comment liked successfully"}
 
-        if LikeComment.get_like_status(user_id, comment_id, 'dislike') != False:
+        if ArticleComment.get_like_status(user_id, comment_id, 'dislike') != False:
             LikeComment.objects.update(like_type='like')
         elif like_status == False:
             LikeComment.objects.create(
@@ -204,23 +211,28 @@ class LikeComment(models.Model):
             like_status.delete()
             return_message = {"message": "comment unliked successfully"}
 
+        return_message["likes"] = ArticleComment.get_comment_likes_dislikes(comment_id, 'like')
+        return_message["dislikes"] = ArticleComment.get_comment_likes_dislikes(comment_id, 'dislike')
+
         return return_message
 
     @staticmethod
     def comment_dislike(user_id, comment_id):
-        like_status = LikeComment.get_like_status(
+        like_status = ArticleComment.get_like_status(
             user_id, comment_id, 'dislike')
         return_message = {"message": "comment disliked successfully"}
 
-        if LikeComment.get_like_status(user_id, comment_id, 'like') != False:
+        if ArticleComment.get_like_status(user_id, comment_id, 'like') != False:
             LikeComment.objects.update(like_type='dislike')
         elif like_status == False:
             LikeComment.objects.create(
                 user_like=user_id, comment_id=comment_id, like_type='dislike')
         else:
             like_status.delete()
-            return_message = {
-                "message": "comment dislike removed successfully"}
+            return_message = {"message": "comment dislike removed successfully"}
+
+        return_message["likes"] = ArticleComment.get_comment_likes_dislikes(comment_id, 'like')
+        return_message["dislikes"] = ArticleComment.get_comment_likes_dislikes(comment_id, 'dislike')
 
         return return_message
 

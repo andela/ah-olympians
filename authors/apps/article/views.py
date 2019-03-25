@@ -408,7 +408,8 @@ class CommentsAPIView(APIView):
 
         new_comment["article"] = slug
 
-        serializer = self.serializer_class(data=new_comment)
+        serializer = self.serializer_class(
+            data=new_comment, context={'request': self.request})
         serializer.is_valid(raise_exception=True)
         serializer.save(author=request.user.profile)
 
@@ -418,13 +419,9 @@ class CommentsAPIView(APIView):
         CommentVerification.article_exists(self, slug)
 
         serializer = self.serializer_class(ArticleComment.objects.filter(
-            article=slug, parent_comment=None), many=True)
-        serializer_data = serializer.data
-        for return_data in serializer_data:
-            return_data = CommentVerification.check_like(
-                self, return_data, request.user.profile, return_data['id'])
+            article=slug, parent_comment=None), many=True, context={'request': self.request})
 
-        return Response(serializer_data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class RetrieveCommentsAPIView(APIView):
@@ -435,12 +432,10 @@ class RetrieveCommentsAPIView(APIView):
     def get(self, request, **kwargs):
         get_comment = CommentVerification.comment_exists(
             self, kwargs['slug'], kwargs['pk'])
-        serializer = self.serializer_class(get_comment)
-        serializer_data = serializer.data
-        return_data = CommentVerification.check_like(
-            self, serializer_data, request.user.profile, get_comment.id)
+        serializer = self.serializer_class(
+            get_comment, context={'request': self.request})
 
-        return Response(return_data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, **kwargs):
         CommentVerification.check_profile(self, request.user.id)
@@ -452,7 +447,7 @@ class RetrieveCommentsAPIView(APIView):
 
         updated_data = request.data.get('comment', {})
         serializer = CommentSerializer(
-            update_comment, data=updated_data, partial=True)
+            update_comment, data=updated_data, partial=True, context={'request': self.request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
@@ -471,7 +466,7 @@ class RetrieveCommentsAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response({"message": "comment deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": "comment deleted successfully"}, status=status.HTTP_202_ACCEPTED)
 
 
 class SubCommentAPIView(APIView):
@@ -488,7 +483,8 @@ class SubCommentAPIView(APIView):
 
         new_comment["article"] = kwargs['slug']
 
-        serializer = self.serializer_class(data=new_comment)
+        serializer = self.serializer_class(
+            data=new_comment, context={'request': self.request})
         serializer.is_valid(raise_exception=True)
         serializer.save(author=request.user.profile,
                         parent_comment=parent_article)
@@ -496,16 +492,12 @@ class SubCommentAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def get(self, request, **kwargs):
-        get_comment = CommentVerification.comment_exists(
-            self, kwargs['slug'], kwargs['pk'])
+        CommentVerification.comment_exists(self, kwargs['slug'], kwargs['pk'])
 
         serializer = self.serializer_class(ArticleComment.objects.filter(
-            article=kwargs['slug'], parent_comment=kwargs['pk']), many=True)
-        serializer_data = serializer.data
-        for return_data in serializer_data:
-            return_data = CommentVerification.check_like(
-                self, return_data, request.user.profile, return_data['id'])
-        return Response(serializer_data, status=status.HTTP_200_OK)
+            article=kwargs['slug'], parent_comment=kwargs['pk']), many=True, context={'request': self.request})
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class LikeUnlikeAPIView(APIView):
@@ -625,9 +617,10 @@ class BookmarkAPIView(APIView):
                 return_data, status=status.HTTP_404_NOT_FOUND)
         else:
             return_message = Response(
-                return_data, status=status.HTTP_204_NO_CONTENT)
+                return_data, status=status.HTTP_202_ACCEPTED)
 
         return return_message
+
 
 class BookmarksAPIView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -862,3 +855,4 @@ class SocialShareArticle(RetrieveAPIView):
         
         return share_link
         
+

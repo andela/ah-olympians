@@ -3,6 +3,8 @@ from .views import (ArticlesAPIView, RetrieveArticleAPIView, LikeAPIView, Dislik
                     RetrieveCommentsAPIView, SubCommentAPIView, LikeUnlikeAPIView, CommentDislikeAPIView, BookmarkAPIView, 
                     BookmarksAPIView, ReportArticlesView, GetSingleReportView, GetAllReportsViews, SocialShareArticle)
 
+from .views import (ArticlesAPIView, RetrieveArticleAPIView, LikeAPIView, DislikeAPIView, RateAPIView, FavouriteAPIView, CommentsAPIView,
+                    RetrieveCommentsAPIView, SubCommentAPIView, LikeUnlikeAPIView, CommentDislikeAPIView, BookmarkAPIView, BookmarksAPIView)
 
                     
 app_name = "articles"
