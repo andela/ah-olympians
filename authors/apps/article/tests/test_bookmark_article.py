@@ -95,7 +95,7 @@ class CommentsTest(APITestCase):
 
         self.assertEqual(response.data["message"],
                          "Bookmark removed")
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
     def test_remove_nonexising_bookmark(self):
         """

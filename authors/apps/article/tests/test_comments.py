@@ -234,7 +234,7 @@ class CommentsTest(APITestCase):
 
         self.assertEqual(response.data["message"],
                          "comment deleted successfully")
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
     def test_edit_other_persons_comment(self):
         """

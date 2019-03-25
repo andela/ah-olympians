@@ -250,11 +250,30 @@ class RateSerializer(serializers.ModelSerializer):
 
 class SubcommentSerializer(serializers.ModelSerializer):
     author = ProfileSerializer(read_only=True)
+    like = serializers.SerializerMethodField()
+    total_likes = serializers.SerializerMethodField()
+    dislike = serializers.SerializerMethodField()
+    total_dislikes = serializers.SerializerMethodField()
 
     class Meta:
         model = ArticleComment
-        fields = ['id', 'article', 'createdAt', 'updatedAt',
-                  'body', 'author', 'like', 'dislike', 'is_active', 'subcomments']
+        fields = ['id', 'article', 'createdAt', 'updatedAt', 'body', 'author', 'like', 'total_likes', 'dislike', 'total_dislikes', 'is_active', 'subcomments']
+
+    def get_like(self, comment):
+        request = self.context.get('request', None)
+        return ArticleComment.get_like_status(request.user.profile, comment.id, 'like')
+
+    def get_dislike(self, comment):
+        request = self.context.get('request', None)
+        return ArticleComment.get_like_status(request.user.profile, comment.id, 'dislike')
+
+    def get_total_likes(self, comment):
+        return ArticleComment.get_comment_likes_dislikes(comment.id, 'like')
+
+    def get_total_dislikes(self, comment):
+        return ArticleComment.get_comment_likes_dislikes(comment.id, 'dislike')
+
+
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -263,11 +282,28 @@ class CommentSerializer(serializers.ModelSerializer):
     """
     subcomments = SubcommentSerializer(many=True, read_only=True)
     author = ProfileSerializer(read_only=True)
+    like = serializers.SerializerMethodField()
+    total_likes = serializers.SerializerMethodField()
+    dislike = serializers.SerializerMethodField()
+    total_dislikes = serializers.SerializerMethodField()
 
     class Meta:
         model = ArticleComment
-        fields = ['id', 'article', 'createdAt', 'updatedAt',
-                  'body', 'author', 'like', 'dislike', 'is_active', 'subcomments']
+        fields = ['id', 'article', 'createdAt', 'updatedAt', 'body', 'author', 'like', 'total_likes', 'dislike', 'total_dislikes', 'is_active', 'subcomments']
+
+    def get_like(self, comment):
+        request = self.context.get('request', None)
+        return ArticleComment.get_like_status(request.user.profile, comment.id, 'like')
+
+    def get_dislike(self, comment):
+        request = self.context.get('request', None)
+        return ArticleComment.get_like_status(request.user.profile, comment.id, 'dislike')
+
+    def get_total_likes(self, comment):
+        return ArticleComment.get_comment_likes_dislikes(comment.id, 'like')
+
+    def get_total_dislikes(self, comment):
+        return ArticleComment.get_comment_likes_dislikes(comment.id, 'dislike')
 
 
 class DeleteCommentSerializer(serializers.ModelSerializer):
@@ -289,16 +325,6 @@ class BookmarksSerializer(serializers.ModelSerializer):
         model = Article
         fields = ['id', 'article']
 
-class GetArticleSerializer(serializers.ModelSerializer):
-    tag_list = serializers.SerializerMethodField()
-
-    def get_tag_list(self, article):
-        return list(article.tag_list.names())
-
-    class Meta:
-        model = Article
-        fields = '__all__'
-
 class ReportSerializer(serializers.ModelSerializer):
     """
         Report model serializers
@@ -312,5 +338,3 @@ class ReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReportArticle
         fields = ['article','report_message','reader']
-
-    
