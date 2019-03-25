@@ -1,4 +1,10 @@
+import json
+
 from django.db.utils import IntegrityError
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+from django_social_share.templatetags import social_share
+
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException, NotFound, ValidationError
@@ -376,6 +382,19 @@ class CommentVerification(object):
             raise APIException(
                 {"error": "Permission denied! You don't have a profile"})
 
+    def check_like(self, serial_data, profile_id, comment_id):
+        if LikeComment.get_like_status(profile_id, comment_id, 'like') != False:
+            serial_data['like'] = True
+        if LikeComment.get_like_status(profile_id, comment_id, 'dislike') != False:
+            serial_data['dislike'] = True
+
+        if 'subcomments' in serial_data:
+            if len(serial_data['subcomments']) > 0:
+                for return_data in serial_data['subcomments']:
+                    return_data = CommentVerification.check_like(
+                        self, return_data, profile_id, return_data['id'])
+
+        return serial_data
 
 class CommentsAPIView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -725,3 +744,115 @@ class GetAllReportsViews(RetrieveAPIView):
             return Response({"message": "No reports"}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.serializer_class(reports, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SocialShareArticle(RetrieveAPIView):
+    '''
+    handle social sharing of an article by an authenticated user
+    '''
+
+    permission_classes = (IsAuthenticated,)
+
+    def get(self,request,*args,**kwargs):
+        '''
+        return a sharable link if you are an authenticated user and 
+        enable the user to redirect to the specified url
+        '''
+
+        #fetch provider specified in the url
+        provider = kwargs['provider']
+
+        context = {'request':request}
+
+        #try fetch an article using the provided slug from the database
+        #if the article does not exist return 404 not found
+
+        try:
+            article = Article.objects.get(slug=kwargs['slug'])
+
+        except Article.DoesNotExist:
+            raise NotFound({
+                "error": "article was not found"
+            })
+
+        article_url = request.build_absolute_uri(
+            "{}article/{}".format(
+                article.slug,
+                provider
+            )
+        )
+
+        share_link = self.get_link(context, provider, article, article_url)
+
+        if not share_link:
+            #where provider is invalid,return a provider invalid error
+            return Response(
+                {
+                    "error":"provider was invalid"
+                }
+            )
+
+        return Response(
+            {
+                "share":{
+                    "link":share_link,
+                    "provider":provider
+                }
+            }, status.HTTP_200_OK
+        )
+    
+    def get_link(self,context,provider,article,article_url):
+        share_link = None
+
+        if provider == "facebook":
+            # get link to redirect for a facebook share
+
+            share_link = social_share.post_to_facebook_url(
+                context,
+                article_url
+            )['facebook_url']
+
+        elif provider == "twitter":
+            text = "Read this on Authors Heaven: {}".format(
+                article.title
+            )
+
+            share_link = social_share.post_to_twitter(
+                context,
+                text,
+                article_url,
+                link_text='Post this article to twitter'
+            )['tweet_url']
+
+        elif provider == 'reddit':
+            #share link to reddit platform
+            share_link = social_share.post_to_reddit_url(
+                context,
+                article.title,
+                article_url
+            )['reddit_url']
+        
+        elif provider == 'linkedin':
+            title = 'Check this article out on Authors Heaven {}'.format(article.title)
+
+            #This gets the sharable link for an article to redirect to the linkedin platform
+
+            share_link = social_share.post_to_linkedin_url(
+                context,
+                title,
+                article_url
+            )['linkedin_url']
+
+        elif provider == "email":
+            subtitle = "Wow!An article from Authors Heaven has been shared to you!Read!!"
+
+            #get share link for user to redirect to the email platform
+            share_link = social_share.send_email_url(
+                    context,
+                    subtitle,
+                    article_url,
+                )['mailto_url']
+        
+        return share_link
+        
+
