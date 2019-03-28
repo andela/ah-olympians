@@ -1,8 +1,8 @@
 import json
 
+from rest_framework.exceptions import APIException
 from rest_framework.test import APITestCase, APIClient
 from rest_framework.views import status
-import pdb
 
 
 class TestArticle(APITestCase):
@@ -51,6 +51,14 @@ class TestArticle(APITestCase):
             }
         }
 
+        self.user3 = {
+            "user": {
+                "email": "chir@olympians.com",
+                "username": "chir",
+                "password": "test1234"
+            }
+        }
+
         self.article1 = {
 
             "description": "sdsd",
@@ -65,17 +73,26 @@ class TestArticle(APITestCase):
         create_user2 = self.client.post(
             '/api/users/', self.user2, format='json')
 
+        create_user3 = self.client.post(
+            '/api/users/', self.user3, format='json')
+
         self.request_tkn = self.client.post(
             '/api/users/login/', self.user, format='json')
 
         self.request_tkn2 = self.client.post(
             '/api/users/login/', self.user2, format='json')
 
+        self.request_tkn3 = self.client.post(
+            '/api/users/login/', self.user3, format='json')
+
         token_request = json.loads(self.request_tkn.content)
         self.token = token_request["user"]["token"]
 
         token_request2 = json.loads(self.request_tkn2.content)
         self.token2 = token_request2["user"]["token"]
+
+        token_request3 = json.loads(self.request_tkn3.content)
+        self.token3 = token_request3["user"]["token"]
 
         create_profile = self.client.post('/api/profile/create_profile/', self.user,
                                           HTTP_AUTHORIZATION='Token ' + self.token,
@@ -97,6 +114,17 @@ class TestArticle(APITestCase):
         self.assertIn(
             'Andela', str(result))
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_create_article_without_profile(self):
+        """Tests a request for creating article without a profile
+        :return:
+        """
+        response = self.client.post('/api/articles/', self.article,
+                                    HTTP_AUTHORIZATION='Token ' + self.token3,
+                                    format='json')
+        result = json.loads(response.content)
+        self.assertEqual(result["article"]["error"], "Permission denied! You don't have a profile")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_title_article(self):
         """Tests a request which does not have a title on the json
@@ -228,7 +256,7 @@ class TestArticle(APITestCase):
         self.assertEqual(response_article.status_code,
                          status.HTTP_202_ACCEPTED)
 
-    def test_delete_unexistting_article(self):
+    def test_delete_non_existent_article(self):
         """
         tests the delete for a un existing article
         :return:
@@ -241,8 +269,7 @@ class TestArticle(APITestCase):
         self.assertIn(
             'Sorry, the article was not found', str(article))
 
-        self.assertEqual(response_article.status_code,
-                         status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(response_article.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_edit_article(self):
         """

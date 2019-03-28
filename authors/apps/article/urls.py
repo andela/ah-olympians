@@ -7,7 +7,7 @@ from .views import (ArticlesAPIView, RetrieveArticleAPIView, LikeAPIView, Dislik
                     BookmarksAPIView, ReportArticlesView, GetSingleReportView, GetAllReportsViews, SocialShareArticle,
                     SearchArticles)
 
-app_name = "articles"
+app_name = "article"
 
 urlpatterns = [
     path('articles/', ArticlesAPIView.as_view()),

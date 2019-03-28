@@ -13,9 +13,18 @@ def send_email(to_email, subject, message):
     """
     sg = sendgrid.SendGridAPIClient(apikey=os.getenv("SENDGRID_API_KEY"))
     from_email = Email(os.getenv("EMAIL_FROM"))
+
+    if type(to_email) == list:
+        for i in range(len(to_email)):
+            too_email = Email(to_email[i])
+            subject = subject
+            content = Content("text/plain", message)
+            mail = Mail(from_email, subject, too_email, content)
+            response = sg.client.mail.send.post(request_body=mail.get())
+
     to_email = Email(to_email)
     subject = subject
-    content = Content("text/plain", message)
+    content = Content("text/plain", message) 
     try:
         mail = Mail(from_email, subject, to_email, content)
         response = sg.client.mail.send.post(request_body=mail.get())
@@ -26,10 +35,10 @@ def send_email(to_email, subject, message):
     except Exception:
         return "There was an error sending"
 
-
 def verify_message(name, token):
     message = " Thank you " + name + " for registering with us please verify your email\n " \
                                     "by clicking on the following link\n " \
               + os.getenv("URL") + "/verify/" + token + "\n Welcome"
 
     return message
+

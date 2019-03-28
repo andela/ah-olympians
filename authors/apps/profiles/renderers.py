@@ -37,6 +37,7 @@ class ProfileJSONRenderer(JSONRenderer):
         })
 
 class FollowListJSONRenderer(JSONRenderer):
+    """Renders followers/following list. """
     charset = 'utf-8'
 
     def render(self, data, media_type=None, renderer_context=None):
@@ -44,13 +45,33 @@ class FollowListJSONRenderer(JSONRenderer):
         token = data.get('token', None)
 
         if errors is not None:
-            return super(ProfileJSONRenderer, self).render(data)
+            return super(FollowListJSONRenderer, self).render(data)
 
         if token is not None and isinstance(token, bytes):
             data['token'] = token.decode('utf-8')
 
-
-        # Finally, we can render our data under the "user" namespace.
         return json.dumps({
             'profile': data
+        })
+
+
+class NotifyJSONRenderer(JSONRenderer):
+    """Renders notifications. """
+    charset = 'utf-8'
+
+    def render(self, data, media_type=None, renderer_context=None):
+        errors = data.get('errors', None)
+        token = data.get('token', None)
+
+        if errors is not None:
+            return super(NotifyJSONRenderer, self).render(data)
+
+        if token is not None and isinstance(token, bytes):
+            # We will decode `token` if it is of type
+            # bytes.
+            data['token'] = token.decode('utf-8')
+
+        # Finally, we can render our data under the "notifications" namespace.
+        return json.dumps({
+            'notifications': data
         })

@@ -1,5 +1,6 @@
 from django.db.utils import IntegrityError
 from django.forms.models import model_to_dict
+from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import status, response
@@ -14,13 +15,18 @@ from rest_framework.exceptions import APIException
 from rest_framework.views import APIView
 
 import psycopg2
+import uuid
 
-from .models import UserProfile
+from ..article.models import ArticleFavourite
+from .models import UserProfile, NotifyMe
 from .renderers import (
-	ProfileJSONRenderer, FollowListJSONRenderer)
+	ProfileJSONRenderer, FollowListJSONRenderer,
+	NotifyJSONRenderer)
 from .serializers import (
     ProfileSerializer, DeactivateSerializer, 
-    FollowSerializer, FollowListSerializer
+    FollowSerializer, FollowListSerializer,
+    NotifySerializer, OptNotificationSerializer,
+    EmailNotificationSerializer
 )
 from .custom_validations import validate_avatar
 
@@ -115,7 +121,7 @@ class ViewUserProfileAPIView(RetrieveAPIView):
 class ViewAllProfilesAPIView(ListAPIView):
 	""" A class that contains methods on viewing all user profiles."""
 
-	permission_classes = (IsAuthenticated,)
+	#permission_classes = (IsAuthenticated,)
 	renderer_classes = (ProfileJSONRenderer,)
 	serializer_class = ProfileSerializer
 	queryset = UserProfile.objects.all()
@@ -265,7 +271,6 @@ class FollowAuthorAPIView(APIView):
 				"{}, you already follow {}".format(my_profile.username.username, 
 					target_profile.username.username)})
 
-
 		my_profile.follow(target_profile)
 		serializer = self.serializer_class(target_profile, context={'request': self.request})
 
@@ -303,7 +308,9 @@ class FollowAuthorAPIView(APIView):
 
 
 class FollowerListAPIView(ListAPIView):
-	""" A class that contains methods on getting list of users a user follows."""
+	"""
+	A class that contains methods on getting list of users a user follows.
+	"""
 
 	permission_classes = (IsAuthenticated,)
 	renderer_classes = (FollowListJSONRenderer,)
@@ -316,10 +323,13 @@ class FollowerListAPIView(ListAPIView):
 		queryset = request.user.profile.followed_by.all()
 		serializer = self.serializer_class(queryset, many=True)
 		data = {obj['username']: obj for obj in serializer.data}
-		return Response({"followers": data})
+		return Response({"followers": data, "followers_count": len(serializer.data)})
+
 
 class FollowingListAPIView(ListAPIView):
-	""" A class that contains methods on getting list of users that follow a user."""
+	"""
+	A class that contains methods on getting list of users that follow a user.
+	"""
 
 	permission_classes = (IsAuthenticated,)
 	renderer_classes = (FollowListJSONRenderer,)
@@ -332,13 +342,116 @@ class FollowingListAPIView(ListAPIView):
 		queryset = request.user.profile.following.all()
 		serializer = self.serializer_class(queryset, many=True)
 		data = {obj['username']: obj for obj in serializer.data}
-		return Response({"following": data})
+		return Response({"following": data, "following_count": len(serializer.data)})
+
+class NotifyListAPIView(ListAPIView):
+	""" A class for getting user notifications."""
+	permission_classes = (IsAuthenticated,)
+	renderer_classes = (NotifyJSONRenderer,)
+	serializer_class = NotifySerializer
+	queryset = NotifyMe.objects.all()
+
+	def list(self, request, *args, **kwargs):
+		""" Overrides list to get user-specific data."""
+		user = request.user
+		if user.profile.in_app_notify == False:
+			return Response({
+				"message":
+				"You have disabled in-app notifications. Please enable to view"})
+
+		my_follows = user.profile.following.all().values_list('username_id')
+		my_follows = [item[0] for item in my_follows]
+
+		my_articles = ArticleFavourite.objects.filter(user_id=user.id).values_list("article_id")
+		my_articles = [item[0] for item in my_articles]
+
+		queryset = self.queryset.filter(Q(username_id__in=my_follows) | Q(article_id__in=my_articles))
+		serializer = self.serializer_class(queryset, many=True)
+		data = {obj['title'] + "-" + str(uuid.uuid4()): obj for obj in serializer.data}
+		return Response(data)
 
 
+class OptInAppNotifyAPIView(RetrieveUpdateAPIView):
+	""" A class that contains methods of enabling/disabling notifications."""
+
+	lookup_field = "username_id"
+	permission_classes = (IsAuthenticated,)
+	renderer_classes = (ProfileJSONRenderer,)
+	serializer_class = OptNotificationSerializer
+	queryset = UserProfile.objects.all()
+
+	def get_object(self):
+		""" Retrieves active user's profile."""
+		serializer = self.serializer_class
+		queryset = self.filter_queryset(self.get_queryset())
+
+		try:
+			my_profile = queryset.get(username_id=self.request.user.id)
+		except (Exception, UserProfile.DoesNotExist):
+			APIException.status_code = status.HTTP_404_NOT_FOUND
+			raise APIException ({"message": "User has no profile"})
+
+		return my_profile
+
+	def update(self, request):
+		""" Toggles in_app_notify."""
+		try:
+			current_status = request.user.profile.in_app_notify
+		except (Exception, UserProfile.DoesNotExist):
+			APIException.status_code = status.HTTP_404_NOT_FOUND
+			raise APIException ({"message": "User has no profile"})
+		current_status = not current_status
+
+		data = {"in_app_notify": current_status}
+		profile = self.get_object()
+		serializer = self.serializer_class(profile, data=data)
+
+		if serializer.is_valid():
+			serializer.save()
+			return Response(serializer.data, status=status.HTTP_200_OK)
+		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class OptEmailNotifyAPIView(RetrieveUpdateAPIView):
+	"""
+	A class that contains methods of enabling/disabling email notifications.
+	"""
 
-		
+	lookup_field = "username_id"
+	permission_classes = (IsAuthenticated,)
+	renderer_classes = (ProfileJSONRenderer,)
+	serializer_class = EmailNotificationSerializer
+	queryset = UserProfile.objects.all()
 
+	def get_object(self):
+		""" Retrieves active user's profile."""
+		serializer = self.serializer_class
+		queryset = self.filter_queryset(self.get_queryset())
+
+		try:
+			my_profile = queryset.get(username_id=self.request.user.id)
+		except (Exception, UserProfile.DoesNotExist):
+			APIException.status_code = status.HTTP_404_NOT_FOUND
+			raise APIException ({"message": "User has no profile"})
+
+		return my_profile
+
+	def update(self, request):
+		""" Toggles email_notify."""
+		try:
+			current_status = request.user.profile.email_notify
+		except (Exception, UserProfile.DoesNotExist):
+			APIException.status_code = status.HTTP_404_NOT_FOUND
+			raise APIException ({"message": "User has no profile"})
+		current_status = not current_status
+
+		data = {"email_notify": current_status}
+		profile = self.get_object()
+		serializer = self.serializer_class(profile, data=data)
+
+		if serializer.is_valid():
+			serializer.save()
+			return Response(serializer.data, status=status.HTTP_200_OK)
+		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
