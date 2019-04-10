@@ -203,7 +203,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         :param token:
         :return: Returns a message with a url link
         """
-        link = "{}api/users/reset_password/{}".format(os.environ['URL'], token)
+        link = "{}/resetform/{}".format(os.environ['FRONT_URL'], token)
 
         request_message = "An account associated with this email address " \
                           "for Authors Haven has requested a password reset." \
