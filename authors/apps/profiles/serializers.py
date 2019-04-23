@@ -4,6 +4,20 @@ from rest_framework.validators import UniqueValidator
 from .models import UserProfile, NotifyMe
 
 
+class OptNotificationSerializer(serializers.ModelSerializer):
+	"""Serializes user enabling/disabling notifications. """
+	class Meta:
+		model = UserProfile
+		fields = ['in_app_notify', ]
+
+
+class EmailNotificationSerializer(serializers.ModelSerializer):
+	"""Serializes user enabling/disabling email notifications. """
+	class Meta:
+		model = UserProfile
+		fields = ['email_notify', ]
+
+
 class ProfileSerializer(serializers.ModelSerializer):
 	"""Serializes creation of user profile. """
 	username = serializers.SlugRelatedField(read_only=True, slug_field='username')
@@ -27,8 +41,10 @@ class ProfileSerializer(serializers.ModelSerializer):
 		fields = [
 				'username', 'bio',
 				'avatar', 'interests', 'favorite_quote',
-				'website', 'following', 'username_id'
+				'website', 'following', 'username_id', 'email_notify', 'in_app_notify'
 				]
+
+
 
 
 class DeactivateSerializer(serializers.ModelSerializer):
@@ -86,16 +102,5 @@ class NotifySerializer(serializers.ModelSerializer):
 		fields = ["username", "notification", "title", "time_posted",]
 
 
-class OptNotificationSerializer(serializers.ModelSerializer):
-	"""Serializes user enabling/disabling notifications. """
-	class Meta:
-		model = UserProfile
-		fields = ['in_app_notify',]
 
-
-class EmailNotificationSerializer(serializers.ModelSerializer):
-	"""Serializes user enabling/disabling email notifications. """
-	class Meta:
-		model = UserProfile
-		fields = ['email_notify',]
 
