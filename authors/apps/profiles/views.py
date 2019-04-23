@@ -367,7 +367,7 @@ class NotifyListAPIView(ListAPIView):
 
 		queryset = self.queryset.filter(Q(username_id__in=my_follows) | Q(article_id__in=my_articles))
 		serializer = self.serializer_class(queryset, many=True)
-		data = {obj['title'] + "-" + str(uuid.uuid4()): obj for obj in serializer.data}
+		data = {obj['slug'] + "-" + str(uuid.uuid4()): obj for obj in serializer.data}
 		return Response(data)
 
 
@@ -453,5 +453,3 @@ class OptEmailNotifyAPIView(RetrieveUpdateAPIView):
 			serializer.save()
 			return Response(serializer.data, status=status.HTTP_200_OK)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-

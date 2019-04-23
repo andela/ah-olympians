@@ -53,6 +53,7 @@ class NotifyMe(models.Model):
 	article_id = models.CharField(blank=True, max_length=255)
 	if_read = models.BooleanField(default=False)
 	created = models.DateTimeField(auto_now_add=True)
+	slug = models.CharField(blank=True, max_length=255)
 
 	def created_time(self):
 	   return timesince(self.created) + " " + "ago"
