@@ -82,8 +82,9 @@ class ArticlesAPIView(APIView):
 
             NotifyMe.objects.create(
                 username=user,
-                notification="A new article from {}".format(author_name),
-                title="New Article")
+                notification="A new article titled {} from {}".format(article_title, author_name),
+                slug=serializer.data["slug"])
+
             # End of notification sending
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)

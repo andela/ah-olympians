@@ -99,7 +99,7 @@ class NotifySerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = NotifyMe
-		fields = ["username", "notification", "title", "time_posted",]
+		fields = ["username", "notification", "time_posted", "slug", ]
 
 
 
