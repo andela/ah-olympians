@@ -141,6 +141,7 @@ class ArticleLikes(models.Model):
         try:
             likes = ArticleLikes.objects.filter(user=user, article=slug)
             article = ArticleLikes.get_article(slug=slug)
+            article.tag_list = list(article.tag_list.names())
         except:
             APIException.status_code = status.HTTP_404_NOT_FOUND
             raise APIException(
