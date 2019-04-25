@@ -32,7 +32,7 @@ from .utils import email_message
 
 class ArticlesAPIView(APIView):
     queryset = Article.objects.all()
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsAuthenticatedOrReadOnly, )
     serializer_class = ArticleSerializer
     renderer_classes = (ArticleJSONRenderer, )
     lookup_field = 'slug'
@@ -99,7 +99,7 @@ class ArticlesAPIView(APIView):
         for article in articles:
             article.tag_list = list(article.tag_list.names())
         serializer = ArticleSerializer(
-            articles, many=True, context={'request': self.request})
+            articles, many=True)
         return Response(serializer.data)
 
     def destroy(self, request, slug):
