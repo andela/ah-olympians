@@ -51,6 +51,8 @@ class CommentJSONRenderer(JSONRenderer):
         if data['is_active'] == False:
             del data['like']
             del data['dislike']
+            del data['total_likes']
+            del data['total_dislikes']
             del data['is_active']
             del data['article']
             del data['author']
@@ -71,6 +73,7 @@ class CommentJSONRenderer(JSONRenderer):
 
         if len(data['subcomments']) > 0:
             for comment in data['subcomments']:
-                comment = self.filter_data(comment)
+                if type(comment) != int:
+                    comment = self.filter_data(comment)
 
         return data
