@@ -261,11 +261,15 @@ class SubcommentSerializer(serializers.ModelSerializer):
 
     def get_like(self, comment):
         request = self.context.get('request', None)
-        return ArticleComment.get_like_status(request.user.profile, comment.id, 'like')
+        if ArticleComment.get_like_status(request.user.profile, comment.id, 'like'):
+            return True
+        return False
 
     def get_dislike(self, comment):
         request = self.context.get('request', None)
-        return ArticleComment.get_like_status(request.user.profile, comment.id, 'dislike')
+        if ArticleComment.get_like_status(request.user.profile, comment.id, 'dislike'):
+            return True
+        return False
 
     def get_total_likes(self, comment):
         return ArticleComment.get_comment_likes_dislikes(comment.id, 'like')
@@ -293,11 +297,15 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def get_like(self, comment):
         request = self.context.get('request', None)
-        return ArticleComment.get_like_status(request.user.profile, comment.id, 'like')
+        if ArticleComment.get_like_status(request.user.profile, comment.id, 'like'):
+            return True
+        return False
 
     def get_dislike(self, comment):
         request = self.context.get('request', None)
-        return ArticleComment.get_like_status(request.user.profile, comment.id, 'dislike')
+        if ArticleComment.get_like_status(request.user.profile, comment.id, 'dislike'):
+            return True
+        return False
 
     def get_total_likes(self, comment):
         return ArticleComment.get_comment_likes_dislikes(comment.id, 'like')
